@@ -1275,7 +1275,110 @@
             box-shadow: var(--shadow);
         }
 
-        /* Responsive Styles */
+        /* Mobile Header with Hamburger Menu */
+        .mobile-header {
+            display: none;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 15px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 200;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .mobile-header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .hamburger-menu {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .hamburger-menu:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .mobile-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+
+        .mobile-logo i {
+            color: var(--secondary-light);
+        }
+
+        /* Mobile Sidebar Overlay */
+        .mobile-sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 300;
+            backdrop-filter: blur(5px);
+        }
+
+        .mobile-sidebar {
+            position: fixed;
+            top: 0;
+            left: -280px;
+            width: 280px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 25px 0;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 15px rgba(0, 0, 0, 0.1);
+            z-index: 400;
+            transition: left 0.3s ease;
+            overflow-y: auto;
+        }
+
+        .mobile-sidebar.active {
+            left: 0;
+        }
+
+        .mobile-sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 25px 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+            margin-bottom: 20px;
+        }
+
+        .mobile-sidebar-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-sidebar-close:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Enhanced Responsive Styles */
         @media (max-width: 1200px) {
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
@@ -1292,30 +1395,17 @@
             }
             
             .sidebar {
-                width: 100%;
-                height: auto;
-            }
-            
-            .nav-menu {
-                flex-direction: row;
-                overflow-x: auto;
-                padding-bottom: 10px;
-            }
-            
-            .nav-item {
-                white-space: nowrap;
-            }
-            
-            .logout {
-                margin-top: 0;
-                padding-top: 0;
-                border-top: none;
-            }
-            
-            .sidebar-stats {
                 display: none;
             }
-
+            
+            .mobile-header {
+                display: block;
+            }
+            
+            .main-content {
+                padding: 15px;
+            }
+            
             .welcome-banner {
                 flex-direction: column;
                 gap: 20px;
@@ -1347,6 +1437,7 @@
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 20px;
+                padding: 15px;
             }
             
             .user-info {
@@ -1378,12 +1469,28 @@
                 flex-direction: column;
                 align-items: flex-start;
             }
+            
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .header-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .appointment-time {
+                min-width: 100%;
+            }
         }
 
         @media (max-width: 576px) {
             .header-actions {
                 flex-direction: column;
                 width: 100%;
+                gap: 10px;
             }
             
             .search-box {
@@ -1405,11 +1512,173 @@
 
             .filter-controls {
                 flex-direction: column;
+                width: 100%;
+            }
+            
+            .filter-btn {
+                width: 100%;
+                text-align: center;
+            }
+            
+            .appointment-actions {
+                flex-direction: column;
+            }
+            
+            .modal-content {
+                width: 95%;
+                margin: 10px;
+            }
+            
+            .modal-body {
+                padding: 20px;
+            }
+            
+            .welcome-banner {
+                padding: 20px;
+            }
+            
+            .welcome-text h2 {
+                font-size: 1.5rem;
+            }
+            
+            .appointment-list {
+                padding: 15px;
+            }
+            
+            .stats-grid {
+                gap: 15px;
+            }
+            
+            .stat-card-main {
+                padding: 20px;
+            }
+            
+            .stat-value {
+                font-size: 2.5rem;
             }
         }
     </style>
 </head>
 <body>
+    <!-- Mobile Header -->
+    <div class="mobile-header">
+        <div class="mobile-header-content">
+            <div class="mobile-logo">
+                <i class="fas fa-stethoscope"></i>
+                <span>MedConnect</span>
+            </div>
+            <button class="hamburger-menu" id="hamburger-menu">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Mobile Sidebar Overlay -->
+    <div class="mobile-sidebar-overlay" id="mobile-sidebar-overlay"></div>
+
+    <!-- Mobile Sidebar -->
+    <div class="mobile-sidebar" id="mobile-sidebar">
+        <div class="mobile-sidebar-header">
+            <div class="logo">
+                <h1>MedConnect</h1>
+                <div class="doctor-mini-info">
+                    <span id="mobile-sidebar-doctor-name">Dr. User</span>
+                    <div class="online-status">
+                        <div class="status-dot"></div>
+                        <span>Online</span>
+                    </div>
+                </div>
+            </div>
+            <button class="mobile-sidebar-close" id="mobile-sidebar-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <nav class="nav-menu">
+            <a href="#dashboard" class="nav-item active" data-section="dashboard">
+                <i class="fas fa-home"></i> 
+                <span class="nav-text">Dashboard</span>
+                <div class="nav-badge" id="mobile-dashboard-badge">0</div>
+            </a>
+            
+            <a href="#appointments" class="nav-item" data-section="appointments">
+                <i class="fas fa-calendar-check"></i> 
+                <span class="nav-text">Appointments</span>
+                <div class="nav-badge" id="mobile-appointments-badge">0</div>
+            </a>
+            
+            <a href="#patients" class="nav-item" data-section="patients">
+                <i class="fas fa-user-injured"></i> 
+                <span class="nav-text">Patients</span>
+                <div class="nav-badge" id="mobile-patients-badge">0</div>
+            </a>
+            
+            <a href="#medical-records" class="nav-item" data-section="medical-records">
+                <i class="fas fa-file-medical"></i> 
+                <span class="nav-text">Medical Records</span>
+            </a>
+            
+            <a href="#prescriptions" class="nav-item" data-section="prescriptions">
+                <i class="fas fa-prescription"></i> 
+                <span class="nav-text">Prescriptions</span>
+                <div class="nav-badge" id="mobile-prescriptions-badge">0</div>
+            </a>
+            
+            <a href="#analytics" class="nav-item" data-section="analytics">
+                <i class="fas fa-chart-line"></i> 
+                <span class="nav-text">Analytics</span>
+            </a>
+            
+            <div class="nav-divider"></div>
+            
+            <a href="#profile" class="nav-item" data-section="profile">
+                <i class="fas fa-user-md"></i> 
+                <span class="nav-text">My Profile</span>
+            </a>
+            
+            <a href="#settings" class="nav-item" data-section="settings">
+                <i class="fas fa-cog"></i> 
+                <span class="nav-text">Settings</span>
+            </a>
+            
+            <a href="#" class="nav-item logout" id="mobile-logout-btn">
+                <i class="fas fa-sign-out-alt"></i> 
+                <span class="nav-text">Logout</span>
+            </a>
+        </nav>
+        
+        <!-- Quick Stats Panel -->
+        <div class="sidebar-stats">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-user-injured"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-number" id="mobile-sidebar-today-patients">0</span>
+                    <span class="stat-label">Today's Patients</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-number" id="mobile-sidebar-pending">0</span>
+                    <span class="stat-label">Pending</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-number" id="mobile-sidebar-emergency">0</span>
+                    <span class="stat-label">Emergency</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <!-- Sidebar -->
         <div class="sidebar">
@@ -2240,7 +2509,8 @@
                 { id: 'prescriptions-avatar', value: getInitials(currentDoctor.name) },
                 { id: 'analytics-avatar', value: getInitials(currentDoctor.name) },
                 { id: 'profile-avatar', value: getInitials(currentDoctor.name) },
-                { id: 'settings-avatar', value: getInitials(currentDoctor.name) }
+                { id: 'settings-avatar', value: getInitials(currentDoctor.name) },
+                { id: 'mobile-sidebar-doctor-name', value: currentDoctor.name }
             ];
 
             elementsToUpdate.forEach(item => {
@@ -2267,6 +2537,8 @@
                     e.preventDefault();
                     const sectionId = this.getAttribute('data-section');
                     switchSection(sectionId);
+                    // Close mobile sidebar after navigation
+                    closeMobileSidebar();
                 });
             });
 
@@ -2279,6 +2551,15 @@
                 });
             } else {
                 console.error('❌ Logout button not found');
+            }
+
+            // Mobile logout handler
+            const mobileLogoutBtn = document.getElementById('mobile-logout-btn');
+            if (mobileLogoutBtn) {
+                mobileLogoutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    handleLogout();
+                });
             }
 
             // Initialize default section from URL hash or default to dashboard
@@ -2369,7 +2650,10 @@
                 { id: 'generate-report-btn', event: 'click', handler: () => generateReport() },
                 { id: 'edit-profile-btn', event: 'click', handler: () => showSuccess('Edit profile feature coming soon') },
                 { id: 'change-password-btn', event: 'click', handler: () => showSuccess('Change password feature coming soon') },
-                { id: 'delete-account-btn', event: 'click', handler: () => confirmDeleteAccount() }
+                { id: 'delete-account-btn', event: 'click', handler: () => confirmDeleteAccount() },
+                { id: 'hamburger-menu', event: 'click', handler: openMobileSidebar },
+                { id: 'mobile-sidebar-close', event: 'click', handler: closeMobileSidebar },
+                { id: 'mobile-sidebar-overlay', event: 'click', handler: closeMobileSidebar }
             ];
 
             eventListeners.forEach(listener => {
@@ -2436,6 +2720,19 @@
                     setCurrentFilter(filter);
                 });
             });
+        }
+
+        // Mobile sidebar functions
+        function openMobileSidebar() {
+            document.getElementById('mobile-sidebar').classList.add('active');
+            document.getElementById('mobile-sidebar-overlay').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeMobileSidebar() {
+            document.getElementById('mobile-sidebar').classList.remove('active');
+            document.getElementById('mobile-sidebar-overlay').style.display = 'none';
+            document.body.style.overflow = 'auto';
         }
 
         // Set current filter and update UI
@@ -3190,7 +3487,14 @@
                 { id: 'dashboard-badge', value: todayPatients },
                 { id: 'appointments-badge', value: pendingCount },
                 { id: 'patients-badge', value: allPatients.length },
-                { id: 'prescriptions-badge', value: allPrescriptions.length }
+                { id: 'prescriptions-badge', value: allPrescriptions.length },
+                { id: 'mobile-sidebar-today-patients', value: todayPatients },
+                { id: 'mobile-sidebar-pending', value: pendingCount },
+                { id: 'mobile-sidebar-emergency', value: emergencyCount },
+                { id: 'mobile-dashboard-badge', value: todayPatients },
+                { id: 'mobile-appointments-badge', value: pendingCount },
+                { id: 'mobile-patients-badge', value: allPatients.length },
+                { id: 'mobile-prescriptions-badge', value: allPrescriptions.length }
             ];
 
             sidebarStats.forEach(stat => {
@@ -3781,7 +4085,7 @@
             }
         });
 
-        console.log('✅ Doctor Dashboard with urgency level implementation initialized successfully');
+        console.log('✅ Doctor Dashboard with mobile responsiveness initialized successfully');
     </script>
 </body>
 </html>
