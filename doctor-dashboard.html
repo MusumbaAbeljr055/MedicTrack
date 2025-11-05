@@ -1,0 +1,3787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Dashboard - MedConnect</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        /* All your existing CSS styles remain the same */
+        :root {
+            --primary: #2c5aa0;
+            --primary-light: #4a7bc8;
+            --primary-dark: #1e3a6c;
+            --secondary: #1a936f;
+            --secondary-light: #2bbd92;
+            --secondary-dark: #0f7a58;
+            --danger: #e74c3c;
+            --danger-light: #ff6b6b;
+            --warning: #f39c12;
+            --warning-light: #f7c46c;
+            --success: #27ae60;
+            --success-light: #58d68d;
+            --info: #17a2b8;
+            --info-light: #5dade2;
+            --light: #f8f9fa;
+            --light-gray: #e9ecef;
+            --dark: #343a40;
+            --gray: #6c757d;
+            --border: #e0e0e0;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --card-shadow: 0 8px 16px rgba(0, 0, 0, 0.05);
+            --hover-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
+            --glass: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Enhanced Sidebar Styles */
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 25px 0;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 15px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 100;
+            transition: all 0.3s ease;
+        }
+
+        .logo {
+            padding: 0 25px 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .logo h1 {
+            font-size: 1.7rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo i {
+            font-size: 2rem;
+            color: var(--secondary-light);
+        }
+
+        .doctor-mini-info {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            border: 1px solid var(--glass-border);
+        }
+
+        .online-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 5px;
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success-light);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            gap: 5px;
+            padding: 0 15px;
+        }
+
+        .nav-item {
+            padding: 15px 20px;
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+            border: none;
+            background: none;
+            cursor: pointer;
+            text-align: left;
+            width: 100%;
+        }
+
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background: var(--secondary);
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+
+        .nav-item:hover::before {
+            transform: scaleY(1);
+        }
+
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-item.active::before {
+            transform: scaleY(1);
+        }
+
+        .nav-item i {
+            font-size: 1.2rem;
+            width: 20px;
+            text-align: center;
+        }
+
+        .nav-text {
+            flex: 1;
+        }
+
+        .nav-badge {
+            background: var(--secondary);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        .nav-divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 15px 0;
+        }
+
+        .logout {
+            margin-top: auto;
+            background: rgba(231, 76, 60, 0.1);
+            border: 1px solid rgba(231, 76, 60, 0.3);
+        }
+
+        .logout:hover {
+            background: rgba(231, 76, 60, 0.2);
+        }
+
+        /* Sidebar Stats */
+        .sidebar-stats {
+            padding: 20px 15px 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .stat-icon {
+            width: 36px;
+            height: 36px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stat-info {
+            flex: 1;
+        }
+
+        .stat-number {
+            display: block;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--secondary-light);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+
+        /* Main Content Styles */
+        .main-content {
+            flex: 1;
+            padding: 25px;
+            overflow-y: auto;
+            background: transparent;
+        }
+
+        .content-section {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Header Styles */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 35px;
+            padding: 20px 25px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: var(--card-shadow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
+        }
+
+        .header h2 {
+            color: var(--dark);
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px 15px;
+            background: var(--light);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .user-info:hover {
+            background: var(--light-gray);
+            transform: translateY(-2px);
+        }
+
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.3rem;
+            box-shadow: var(--shadow);
+            border: 3px solid white;
+        }
+
+        .user-details h3 {
+            font-size: 1.1rem;
+            margin-bottom: 3px;
+            color: var(--dark);
+        }
+
+        .user-details p {
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 25px;
+            margin-bottom: 35px;
+        }
+
+        .stat-card-main {
+            background: white;
+            border-radius: 18px;
+            padding: 30px;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            flex-direction: column;
+            transition: all 0.4s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(0, 0, 0, 0.03);
+        }
+
+        .stat-card-main:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+        }
+
+        .stat-card-main.patients:before {
+            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
+        }
+
+        .stat-card-main.appointments:before {
+            background: linear-gradient(90deg, var(--secondary) 0%, var(--secondary-light) 100%);
+        }
+
+        .stat-card-main.consultations:before {
+            background: linear-gradient(90deg, var(--warning) 0%, var(--warning-light) 100%);
+        }
+
+        .stat-card-main.emergency:before {
+            background: linear-gradient(90deg, var(--danger) 0%, var(--danger-light) 100%);
+        }
+
+        .stat-card-main:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--hover-shadow);
+        }
+
+        .stat-card-main.patients {
+            background: linear-gradient(135deg, #fff 0%, #f0f5ff 100%);
+        }
+
+        .stat-card-main.appointments {
+            background: linear-gradient(135deg, #fff 0%, #f0f9f5 100%);
+        }
+
+        .stat-card-main.consultations {
+            background: linear-gradient(135deg, #fff 0%, #fff9f0 100%);
+        }
+
+        .stat-card-main.emergency {
+            background: linear-gradient(135deg, #fff 0%, #fff0f0 100%);
+            border: 2px solid var(--danger-light);
+        }
+
+        .stat-value {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+            line-height: 1;
+        }
+
+        .stat-card-main.patients .stat-value {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-card-main.appointments .stat-value {
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-card-main.consultations .stat-value {
+            background: linear-gradient(135deg, var(--warning) 0%, var(--warning-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-card-main.emergency .stat-value {
+            color: var(--danger);
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            color: var(--gray);
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+
+        .time-indicator {
+            margin-top: 12px;
+            color: var(--danger);
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Section Headers */
+        .section-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            background: white;
+            border-radius: 15px 15px 0 0;
+            margin-bottom: 0;
+        }
+
+        .section-header:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
+        }
+
+        .section-header h3 {
+            font-size: 1.5rem;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            letter-spacing: 0.3px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            box-shadow: 0 4px 10px rgba(44, 90, 160, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(44, 90, 160, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-light) 100%);
+            color: white;
+            box-shadow: 0 4px 10px rgba(26, 147, 111, 0.3);
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(26, 147, 111, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger) 0%, var(--danger-light) 100%);
+            color: white;
+            box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(231, 76, 60, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success) 0%, var(--success-light) 100%);
+            color: white;
+            box-shadow: 0 4px 10px rgba(39, 174, 96, 0.3);
+        }
+
+        .btn-success:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(39, 174, 96, 0.4);
+        }
+
+        .btn-sm {
+            padding: 8px 12px;
+            font-size: 0.8rem;
+        }
+
+        /* Search Box */
+        .search-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 12px;
+            color: var(--gray);
+        }
+
+        .search-box input {
+            padding: 10px 12px 10px 35px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            width: 250px;
+            transition: all 0.3s ease;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.1);
+        }
+
+        /* Content Containers */
+        .content-container {
+            background: white;
+            border-radius: 0 0 15px 15px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        /* Appointments List */
+        .appointment-list {
+            padding: 25px;
+        }
+
+        .appointment-item {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            padding: 20px;
+            border-radius: 12px;
+            background-color: var(--light);
+            transition: all 0.3s ease;
+            border-left: 5px solid var(--primary);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .appointment-item:hover {
+            background-color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .appointment-item.emergency {
+            border-left: 5px solid var(--danger);
+            background: linear-gradient(135deg, #fff 0%, #fff0f0 100%);
+            border: 2px solid var(--danger-light);
+        }
+
+        .appointment-item.urgent {
+            border-left: 5px solid var(--warning);
+            background: linear-gradient(135deg, #fff 0%, #fff9f0 100%);
+            border: 2px solid var(--warning-light);
+        }
+
+        .appointment-item.normal {
+            border-left: 5px solid var(--success);
+            background: linear-gradient(135deg, #fff 0%, #f0f9f5 100%);
+        }
+
+        .patient-avatar {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .patient-avatar.emergency {
+            background: linear-gradient(135deg, var(--danger-light) 0%, var(--danger) 100%);
+        }
+
+        .patient-avatar.urgent {
+            background: linear-gradient(135deg, var(--warning-light) 0%, var(--warning) 100%);
+        }
+
+        .patient-avatar.normal {
+            background: linear-gradient(135deg, var(--success-light) 0%, var(--success) 100%);
+        }
+
+        .emergency-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--danger);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            animation: pulse 1.5s infinite;
+        }
+
+        .patient-details {
+            flex: 1;
+        }
+
+        .patient-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
+        .patient-details h4 {
+            margin-bottom: 0;
+            font-size: 1.2rem;
+            color: var(--dark);
+            font-weight: 600;
+        }
+
+        .patient-details p {
+            font-size: 0.95rem;
+            color: var(--gray);
+            margin-bottom: 5px;
+        }
+
+        .appointment-time {
+            text-align: center;
+            padding: 10px 15px;
+            background: rgba(44, 90, 160, 0.1);
+            border-radius: 10px;
+            min-width: 120px;
+        }
+
+        .appointment-time .time {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .appointment-time .date {
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+
+        .appointment-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Urgency Badges */
+        .urgency-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .urgency-badge.emergency {
+            background: rgba(231, 76, 60, 0.15);
+            color: var(--danger);
+            border: 1px solid var(--danger-light);
+        }
+
+        .urgency-badge.urgent {
+            background: rgba(243, 156, 18, 0.15);
+            color: var(--warning);
+            border: 1px solid var(--warning-light);
+        }
+
+        .urgency-badge.normal {
+            background: rgba(39, 174, 96, 0.15);
+            color: var(--success);
+            border: 1px solid var(--success-light);
+        }
+
+        /* Priority Indicators */
+        .priority-indicator {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.8rem;
+            margin-top: 5px;
+        }
+
+        .priority-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .priority-dot.emergency {
+            background: var(--danger);
+            animation: pulse 1s infinite;
+        }
+
+        .priority-dot.urgent {
+            background: var(--warning);
+        }
+
+        .priority-dot.normal {
+            background: var(--success);
+        }
+
+        /* Status badges for clinical workflow */
+        .workflow-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status-pending { background: rgba(255, 193, 7, 0.15); color: #ff9800; }
+        .status-scheduled { background: rgba(33, 150, 243, 0.15); color: #2196f3; }
+        .status-doctor_assigned { background: rgba(156, 39, 176, 0.15); color: #9c27b0; }
+        .status-doctor_completed { background: rgba(76, 175, 80, 0.15); color: #4caf50; }
+        .status-completed { background: rgba(96, 125, 139, 0.15); color: #607d8b; }
+
+        /* Loading and Empty States */
+        .loading-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--gray);
+        }
+
+        .loading-state i {
+            font-size: 2rem;
+            margin-bottom: 15px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--gray);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: var(--light-gray);
+        }
+
+        /* Cards for different sections */
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--hover-shadow);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        /* Patient List */
+        .patient-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .patient-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+            border-left: 4px solid var(--primary);
+        }
+
+        .patient-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--hover-shadow);
+        }
+
+        .patient-card-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .patient-avatar-sm {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .patient-info h4 {
+            margin-bottom: 5px;
+            font-size: 1.1rem;
+        }
+
+        .patient-info p {
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+
+        .patient-details-list {
+            list-style: none;
+            margin-top: 10px;
+        }
+
+        .patient-details-list li {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .patient-details-list li:last-child {
+            border-bottom: none;
+        }
+
+        /* Analytics Charts */
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--dark);
+        }
+
+        .chart-placeholder {
+            height: 200px;
+            background: var(--light);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gray);
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 20px;
+            width: 95%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            animation: modalFadeIn 0.4s ease;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-30px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .modal-header {
+            padding: 25px 30px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 20px 20px 0 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .modal-header:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
+        }
+
+        .modal-header h3 {
+            font-size: 1.6rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+        }
+
+        .modal-header .close {
+            font-size: 1.8rem;
+            cursor: pointer;
+            color: white;
+            transition: all 0.3s ease;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .modal-header .close:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        /* Clinical Examination Styles */
+        .clinical-section {
+            background: var(--light);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .clinical-section h4 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .vital-signs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .vital-input-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .vital-input-group label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--gray);
+            margin-bottom: 5px;
+        }
+
+        .vital-input {
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .clinical-findings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        /* New Design Improvements */
+        .welcome-banner {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--card-shadow);
+        }
+
+        .welcome-text h2 {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+        }
+
+        .welcome-text p {
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .quick-action-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+        }
+
+        .quick-action-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-3px);
+        }
+
+        .appointment-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            border-left: 4px solid var(--primary);
+        }
+
+        .appointment-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--hover-shadow);
+        }
+
+        .appointment-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .appointment-card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .appointment-card-time {
+            background: rgba(44, 90, 160, 0.1);
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .appointment-card-body {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .appointment-card-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        /* Filter Controls */
+        .filter-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .filter-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .filter-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 1200px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .analytics-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: auto;
+            }
+            
+            .nav-menu {
+                flex-direction: row;
+                overflow-x: auto;
+                padding-bottom: 10px;
+            }
+            
+            .nav-item {
+                white-space: nowrap;
+            }
+            
+            .logout {
+                margin-top: 0;
+                padding-top: 0;
+                border-top: none;
+            }
+            
+            .sidebar-stats {
+                display: none;
+            }
+
+            .welcome-banner {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+
+            .quick-actions {
+                justify-content: center;
+            }
+
+            .appointment-item {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+
+            .appointment-actions {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 20px;
+            }
+            
+            .user-info {
+                align-self: stretch;
+                justify-content: flex-end;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .clinical-findings-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .vital-signs-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .patient-list {
+                grid-template-columns: 1fr;
+            }
+
+            .quick-actions {
+                flex-direction: column;
+            }
+
+            .patient-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .header-actions {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .search-box {
+                width: 100%;
+            }
+            
+            .search-box input {
+                width: 100%;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .modal-actions {
+                flex-direction: column;
+            }
+
+            .filter-controls {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <i class="fas fa-stethoscope"></i>
+                <h1>MedConnect</h1>
+                <div class="doctor-mini-info">
+                    <span id="sidebar-doctor-name">Dr. User</span>
+                    <div class="online-status">
+                        <div class="status-dot"></div>
+                        <span>Online</span>
+                    </div>
+                </div>
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="#dashboard" class="nav-item active" data-section="dashboard">
+                    <i class="fas fa-home"></i> 
+                    <span class="nav-text">Dashboard</span>
+                    <div class="nav-badge" id="dashboard-badge">0</div>
+                </a>
+                
+                <a href="#appointments" class="nav-item" data-section="appointments">
+                    <i class="fas fa-calendar-check"></i> 
+                    <span class="nav-text">Appointments</span>
+                    <div class="nav-badge" id="appointments-badge">0</div>
+                </a>
+                
+                <a href="#patients" class="nav-item" data-section="patients">
+                    <i class="fas fa-user-injured"></i> 
+                    <span class="nav-text">Patients</span>
+                    <div class="nav-badge" id="patients-badge">0</div>
+                </a>
+                
+                <a href="#medical-records" class="nav-item" data-section="medical-records">
+                    <i class="fas fa-file-medical"></i> 
+                    <span class="nav-text">Medical Records</span>
+                </a>
+                
+                <a href="#prescriptions" class="nav-item" data-section="prescriptions">
+                    <i class="fas fa-prescription"></i> 
+                    <span class="nav-text">Prescriptions</span>
+                    <div class="nav-badge" id="prescriptions-badge">0</div>
+                </a>
+                
+                <a href="#analytics" class="nav-item" data-section="analytics">
+                    <i class="fas fa-chart-line"></i> 
+                    <span class="nav-text">Analytics</span>
+                </a>
+                
+                <div class="nav-divider"></div>
+                
+                <a href="#profile" class="nav-item" data-section="profile">
+                    <i class="fas fa-user-md"></i> 
+                    <span class="nav-text">My Profile</span>
+                </a>
+                
+                <a href="#settings" class="nav-item" data-section="settings">
+                    <i class="fas fa-cog"></i> 
+                    <span class="nav-text">Settings</span>
+                </a>
+                
+                <a href="#" class="nav-item logout" id="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> 
+                    <span class="nav-text">Logout</span>
+                </a>
+            </nav>
+            
+            <!-- Quick Stats Panel -->
+            <div class="sidebar-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-user-injured"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-number" id="sidebar-today-patients">0</span>
+                        <span class="stat-label">Today's Patients</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-number" id="sidebar-pending">0</span>
+                        <span class="stat-label">Pending</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-number" id="sidebar-emergency">0</span>
+                        <span class="stat-label">Emergency</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <!-- Dashboard Section (Default) -->
+            <div id="dashboard-section" class="content-section active">
+                <!-- Dashboard Header -->
+                <div class="header" id="dashboard-header">
+                    <h2><i class="fas fa-tachometer-alt"></i> Doctor Dashboard</h2>
+                    <div class="user-info">
+                        <div class="user-avatar" id="doctor-avatar">DR</div>
+                        <div class="user-details">
+                            <h3 id="doctor-name">Loading...</h3>
+                            <p id="doctor-specialization">Specialization</p>
+                            <p id="doctor-hospital">Hospital</p>
+                        </div>
+                        <button class="btn btn-primary" id="manual-refresh-btn">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Welcome Banner -->
+                <div class="welcome-banner">
+                    <div class="welcome-text">
+                        <h2>Welcome back, <span id="welcome-doctor-name">Doctor</span>!</h2>
+                        <p>Here's your daily overview and patient assignments</p>
+                    </div>
+                    <div class="quick-actions">
+                        <button class="quick-action-btn" id="quick-appointment-btn">
+                            <i class="fas fa-plus"></i> New Appointment
+                        </button>
+                        <button class="quick-action-btn" id="quick-patient-btn">
+                            <i class="fas fa-user-plus"></i> Add Patient
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card-main patients" id="patients-card">
+                        <div class="stat-value" id="today-patients-count">0</div>
+                        <div class="stat-label">Today's Patients</div>
+                    </div>
+                    <div class="stat-card-main appointments" id="appointments-card">
+                        <div class="stat-value" id="confirmed-appointments-count">0</div>
+                        <div class="stat-label">Assigned Patients</div>
+                    </div>
+                    <div class="stat-card-main consultations" id="consultations-card">
+                        <div class="stat-value" id="pending-consultations-count">0</div>
+                        <div class="stat-label">Pending Examinations</div>
+                    </div>
+                    <div class="stat-card-main emergency" id="emergency-card">
+                        <div class="stat-value" id="emergency-cases-count">0</div>
+                        <div class="stat-label">Emergency Cases</div>
+                        <div class="time-indicator">
+                            <i class="fas fa-clock"></i> Immediate attention required
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Appointments Section -->
+                <div class="content-container">
+                    <div class="section-header">
+                        <h3><i class="fas fa-calendar-day"></i> Today's Patient Assignments</h3>
+                        <div class="header-actions">
+                            <div class="filter-controls">
+                                <button class="filter-btn active" data-filter="all">All</button>
+                                <button class="filter-btn" data-filter="emergency">🚨 Emergency</button>
+                                <button class="filter-btn" data-filter="urgent">⚠️ Urgent</button>
+                                <button class="filter-btn" data-filter="normal">⏱ Normal</button>
+                            </div>
+                            <button class="btn btn-primary" id="new-appointment-btn">
+                                <i class="fas fa-plus"></i> New Appointment
+                            </button>
+                            <button class="btn btn-secondary" id="refresh-appointments-btn">
+                                <i class="fas fa-sync"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+                    <div class="appointment-list" id="appointment-list">
+                        <div class="loading-state">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading patient assignments...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Appointments Section -->
+            <div id="appointments-section" class="content-section">
+                <div class="header">
+                    <h2><i class="fas fa-calendar-check"></i> Appointments Management</h2>
+                    <div class="user-info">
+                        <div class="user-avatar" id="appointments-avatar">DR</div>
+                        <div class="user-details">
+                            <h3 id="appointments-doctor-name">Loading...</h3>
+                            <p>Appointment Management</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="content-container">
+                    <div class="section-header">
+                        <h3>All Appointments</h3>
+                        <div class="header-actions">
+                            <div class="filter-controls">
+                                <button class="filter-btn active" data-filter="all">All</button>
+                                <button class="filter-btn" data-filter="emergency">🚨 Emergency</button>
+                                <button class="filter-btn" data-filter="urgent">⚠️ Urgent</button>
+                                <button class="filter-btn" data-filter="normal">⏱ Normal</button>
+                            </div>
+                            <button class="btn btn-primary" id="schedule-appointment-btn">
+                                <i class="fas fa-plus"></i> Schedule Appointment
+                            </button>
+                            <div class="search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="appointment-search" placeholder="Search appointments...">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="appointment-list" id="all-appointments-list">
+                        <div class="loading-state">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading all appointments...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Patients Section -->
+            <div id="patients-section" class="content-section">
+                <div class="header">
+                    <h2><i class="fas fa-user-injured"></i> Patient Management</h2>
+                    <div class="user-info">
+                        <div class="user-avatar" id="patients-avatar">DR</div>
+                        <div class="user-details">
+                            <h3 id="patients-doctor-name">Loading...</h3>
+                            <p>Patient Management</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="content-container">
+                    <div class="section-header">
+                        <h3>All Patients</h3>
+                        <div class="header-actions">
+                            <button class="btn btn-primary" id="add-patient-btn">
+                                <i class="fas fa-plus"></i> Add Patient
+                            </button>
+                            <div class="search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="patient-search" placeholder="Search patients...">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="patient-list" id="patients-container">
+                        <div class="loading-state">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading patients...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Medical Records Section -->
+            <div id="medical-records-section" class="content-section">
+                <div class="header">
+                    <h2><i class="fas fa-file-medical"></i> Medical Records</h2>
+                    <div class="user-info">
+                        <div class="user-avatar" id="records-avatar">DR</div>
+                        <div class="user-details">
+                            <h3 id="records-doctor-name">Loading...</h3>
+                            <p>Medical Records Management</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="content-container">
+                    <div class="section-header">
+                        <h3>Patient Medical Records</h3>
+                        <div class="header-actions">
+                            <button class="btn btn-primary" id="new-record-btn">
+                                <i class="fas fa-plus"></i> New Record
+                            </button>
+                        </div>
+                    </div>
+                    <div class="appointment-list" id="medical-records-list">
+                        <div class="loading-state">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading medical records...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prescriptions Section -->
+            <div id="prescriptions-section" class="content-section">
+                <div class="header">
+                    <h2><i class="fas fa-prescription"></i> Prescriptions</h2>
+                    <div class="user-info">
+                        <div class="user-avatar" id="prescriptions-avatar">DR</div>
+                        <div class="user-details">
+                            <h3 id="prescriptions-doctor-name">Loading...</h3>
+                            <p>Prescription Management</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="content-container">
+                    <div class="section-header">
+                        <h3>All Prescriptions</h3>
+                        <div class="header-actions">
+                            <button class="btn btn-primary" id="new-prescription-btn">
+                                <i class="fas fa-plus"></i> New Prescription
+                            </button>
+                        </div>
+                    </div>
+                    <div class="appointment-list" id="prescriptions-list">
+                        <div class="loading-state">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading prescriptions...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics Section -->
+            <div id="analytics-section" class="content-section">
+                <div class="header">
+                    <h2><i class="fas fa-chart-line"></i> Analytics</h2>
+                    <div class="user-info">
+                        <div class="user-avatar" id="analytics-avatar">DR</div>
+                        <div class="user-details">
+                            <h3 id="analytics-doctor-name">Loading...</h3>
+                            <p>Analytics Dashboard</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="content-container">
+                    <div class="section-header">
+                        <h3>Performance Analytics</h3>
+                        <div class="header-actions">
+                            <select id="time-period-select" class="form-control" style="width: auto;">
+                                <option value="week">This Week</option>
+                                <option value="month">This Month</option>
+                                <option value="quarter">This Quarter</option>
+                                <option value="year">This Year</option>
+                            </select>
+                            <button class="btn btn-primary" id="generate-report-btn">
+                                <i class="fas fa-download"></i> Generate Report
+                            </button>
+                        </div>
+                    </div>
+                    <div class="analytics-grid">
+                        <div class="chart-container">
+                            <div class="chart-title">Patient Visits</div>
+                            <div class="chart-placeholder">
+                                <i class="fas fa-chart-bar"></i> Chart will be displayed here
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <div class="chart-title">Appointment Types</div>
+                            <div class="chart-placeholder">
+                                <i class="fas fa-chart-pie"></i> Chart will be displayed here
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <div class="chart-title">Revenue Overview</div>
+                            <div class="chart-placeholder">
+                                <i class="fas fa-chart-line"></i> Chart will be displayed here
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <div class="chart-title">Patient Satisfaction</div>
+                            <div class="chart-placeholder">
+                                <i class="fas fa-smile"></i> Chart will be displayed here
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Section -->
+            <div id="profile-section" class="content-section">
+                <div class="header">
+                    <h2><i class="fas fa-user-md"></i> My Profile</h2>
+                    <div class="user-info">
+                        <div class="user-avatar" id="profile-avatar">DR</div>
+                        <div class="user-details">
+                            <h3 id="profile-doctor-name">Loading...</h3>
+                            <p>Profile Management</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="content-container">
+                    <div class="section-header">
+                        <h3>Personal Information</h3>
+                        <div class="header-actions">
+                            <button class="btn btn-primary" id="edit-profile-btn">
+                                <i class="fas fa-edit"></i> Edit Profile
+                            </button>
+                        </div>
+                    </div>
+                    <div class="modal-body">
+                        <div id="profile-details">
+                            <!-- Profile details will be loaded here -->
+                        </div>
+                        
+                        <div class="section-header" style="margin-top: 30px;">
+                            <h3>Professional Information</h3>
+                        </div>
+                        <div id="professional-details">
+                            <!-- Professional details will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Section -->
+            <div id="settings-section" class="content-section">
+                <div class="header">
+                    <h2><i class="fas fa-cog"></i> Settings</h2>
+                    <div class="user-info">
+                        <div class="user-avatar" id="settings-avatar">DR</div>
+                        <div class="user-details">
+                            <h3 id="settings-doctor-name">Loading...</h3>
+                            <p>System Settings</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="content-container">
+                    <div class="section-header">
+                        <h3>Account Settings</h3>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="notification-settings">Notification Preferences</label>
+                            <select id="notification-settings" class="form-control">
+                                <option value="all">All Notifications</option>
+                                <option value="important">Important Only</option>
+                                <option value="none">No Notifications</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="language-settings">Language</label>
+                            <select id="language-settings" class="form-control">
+                                <option value="en">English</option>
+                                <option value="es">Spanish</option>
+                                <option value="fr">French</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="theme-settings">Theme</label>
+                            <select id="theme-settings" class="form-control">
+                                <option value="light">Light</option>
+                                <option value="dark">Dark</option>
+                                <option value="auto">Auto</option>
+                            </select>
+                        </div>
+                        
+                        <div class="modal-actions">
+                            <button class="btn btn-primary" id="change-password-btn">
+                                <i class="fas fa-key"></i> Change Password
+                            </button>
+                            <button class="btn btn-danger" id="delete-account-btn">
+                                <i class="fas fa-trash"></i> Delete Account
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- Clinical Examination Modal -->
+    <div class="modal" id="clinical-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-stethoscope"></i> Clinical Examination</h3>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <!-- Clinical examination form content -->
+                <div class="loading-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading examination form...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Patient Modal -->
+    <div class="modal" id="add-patient-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-user-plus"></i> Add New Patient</h3>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="add-patient-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="patient-first-name">First Name</label>
+                            <input type="text" id="patient-first-name" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="patient-last-name">Last Name</label>
+                            <input type="text" id="patient-last-name" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="patient-dob">Date of Birth</label>
+                            <input type="date" id="patient-dob" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="patient-gender">Gender</label>
+                            <select id="patient-gender" class="form-control" required>
+                                <option value="">Select Gender</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="patient-phone">Phone Number</label>
+                        <input type="tel" id="patient-phone" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="patient-email">Email Address</label>
+                        <input type="email" id="patient-email" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="patient-address">Address</label>
+                        <textarea id="patient-address" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save"></i> Save Patient
+                        </button>
+                        <button type="button" class="btn btn-danger" id="cancel-add-patient">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schedule Appointment Modal -->
+    <div class="modal" id="schedule-appointment-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-calendar-plus"></i> Schedule New Appointment</h3>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="schedule-appointment-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="appointment-patient">Patient</label>
+                            <select id="appointment-patient" class="form-control" required>
+                                <option value="">Select Patient</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="appointment-date">Date</label>
+                            <input type="date" id="appointment-date" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="appointment-time">Time</label>
+                            <input type="time" id="appointment-time" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="appointment-type">Appointment Type</label>
+                            <select id="appointment-type" class="form-control" required>
+                                <option value="consultation">Consultation</option>
+                                <option value="follow-up">Follow-up</option>
+                                <option value="emergency">Emergency</option>
+                                <option value="routine">Routine Checkup</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="appointment-notes">Notes</label>
+                        <textarea id="appointment-notes" class="form-control" rows="3" placeholder="Any additional notes..."></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-calendar-check"></i> Schedule Appointment
+                        </button>
+                        <button type="button" class="btn btn-danger" id="cancel-appointment">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced scheduling for web dashboard
+        class DoctorScheduler {
+            calculateOptimalSchedule(doctor, appointments) {
+                const todayAppointments = appointments.filter(apt => 
+                    apt.preferredDate === this.getTodayDate() && 
+                    apt.assignedDoctorId === doctor.doctorId
+                );
+
+                const scheduledCount = todayAppointments.length;
+                const emergencyCount = todayAppointments.filter(apt => 
+                    apt.urgencyLevel === 'emergency' || apt.isEmergency
+                ).length;
+
+                const availableSlots = doctor.maxPatientsPerDay - scheduledCount;
+                const availableEmergencySlots = doctor.emergencySlotsPerDay - emergencyCount;
+
+                return {
+                    canAcceptMore: availableSlots > 0,
+                    availableSlots: availableSlots,
+                    availableEmergencySlots: availableEmergencySlots,
+                    scheduledCount: scheduledCount,
+                    emergencyCount: emergencyCount,
+                    workloadPercentage: (scheduledCount / doctor.maxPatientsPerDay) * 100,
+                    workloadStatus: this.getWorkloadStatus(scheduledCount, doctor.maxPatientsPerDay),
+                    recommendedAction: this.getRecommendedAction(availableSlots, availableEmergencySlots)
+                };
+            }
+
+            getWorkloadStatus(scheduledCount, maxPatients) {
+                const percentage = (scheduledCount / maxPatients) * 100;
+                if (percentage >= 90) return { text: "Critical", color: "var(--danger)", icon: "fas fa-exclamation-triangle" };
+                if (percentage >= 75) return { text: "High", color: "var(--warning)", icon: "fas fa-exclamation-circle" };
+                if (percentage >= 50) return { text: "Moderate", color: "var(--info)", icon: "fas fa-info-circle" };
+                return { text: "Low", color: "var(--success)", icon: "fas fa-check-circle" };
+            }
+
+            getRecommendedAction(availableSlots, availableEmergencySlots) {
+                if (availableSlots === 0) return "Fully Booked - No new appointments";
+                if (availableEmergencySlots === 0) return "Accepting normal appointments only";
+                if (availableSlots <= 5) return "Limited availability - Prioritize emergencies";
+                return "Accepting all appointments";
+            }
+
+            getTodayDate() {
+                return new Date().toISOString().split('T')[0];
+            }
+        }
+
+        // Initialize scheduler
+        const doctorScheduler = new DoctorScheduler();
+
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyANXmDNeF8abHC8Op8pYCHDEhA3A-ueIEE",
+            authDomain: "azimbalife055.firebaseapp.com",
+            databaseURL: "https://azimbalife055-default-rtdb.firebaseio.com",
+            projectId: "azimbalife055",
+            storageBucket: "azimbalife055.firebasestorage.app",
+            messagingSenderId: "78443464091",
+            appId: "1:78443464091:web:4efbe24a38f30adf4ecd3e"
+        };
+
+        // Global variables
+        let currentDoctor = null;
+        let currentAppointments = [];
+        let currentExaminationData = {};
+        let database = null;
+        let allPatients = [];
+        let allMedicalRecords = [];
+        let allPrescriptions = [];
+        let currentFilter = 'all';
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 DOM loaded, initializing application...');
+            initializeApp();
+        });
+
+        async function initializeApp() {
+            try {
+                console.log('🚀 Initializing Doctor Dashboard...');
+                
+                // Initialize Firebase
+                await initializeFirebase();
+                
+                // Setup session management
+                setupSessionManagement();
+                
+                // Get the logged-in doctor with authentication check
+                await getLoggedInDoctor();
+                
+                // Initialize navigation and UI
+                initializeNavigation();
+                updateDoctorUI();
+                setupEventListeners();
+                
+                // Load initial data
+                await loadInitialData();
+                
+                console.log('✅ Application initialized successfully');
+                
+            } catch (error) {
+                console.error('❌ Error initializing app:', error);
+                showError('Failed to initialize application: ' + error.message);
+            }
+        }
+
+        // Initialize Firebase
+        async function initializeFirebase() {
+            try {
+                console.log('🔥 Initializing Firebase...');
+                
+                // Check if Firebase is already initialized
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                database = firebase.database();
+                
+                console.log('✅ Firebase initialized successfully');
+                
+            } catch (error) {
+                console.error('❌ Firebase initialization failed:', error);
+                throw error;
+            }
+        }
+
+        // Authentication Check
+        function checkDoctorAuthentication() {
+            const savedDoctor = sessionStorage.getItem('currentDoctor');
+            if (!savedDoctor) {
+                console.error('❌ No doctor found in session storage');
+                window.location.href = 'doctor-login.html';
+                return null;
+            }
+            
+            try {
+                const doctor = JSON.parse(savedDoctor);
+                console.log('✅ Authenticated doctor:', doctor.name);
+                return doctor;
+            } catch (error) {
+                console.error('❌ Authentication error:', error);
+                sessionStorage.removeItem('currentDoctor');
+                window.location.href = 'doctor-login.html';
+                return null;
+            }
+        }
+
+        // Get the logged-in doctor
+        async function getLoggedInDoctor() {
+            try {
+                // Check authentication first
+                const authenticatedDoctor = checkDoctorAuthentication();
+                if (!authenticatedDoctor) {
+                    return;
+                }
+                
+                // Verify doctor still exists in database
+                console.log('🔍 Verifying doctor in database...');
+                const snapshot = await database.ref('MbararaHospital/Doctors/' + authenticatedDoctor.id).once('value');
+                
+                if (snapshot.exists()) {
+                    const doctorData = snapshot.val();
+                    currentDoctor = {
+                        id: authenticatedDoctor.id,
+                        name: doctorData.name || authenticatedDoctor.name,
+                        email: doctorData.email || authenticatedDoctor.email,
+                        specialization: doctorData.specialty || doctorData.specialization || authenticatedDoctor.specialization || 'General Practitioner',
+                        hospital: doctorData.hospital || authenticatedDoctor.hospital || 'Mbarara Hospital',
+                        location: doctorData.location || authenticatedDoctor.location || 'Mbarara',
+                        phone: doctorData.phone || authenticatedDoctor.phone || 'Not provided',
+                        availability: doctorData.availability || authenticatedDoctor.availability || 'Available'
+                    };
+                    console.log('✅ Doctor verified and loaded:', currentDoctor);
+                    
+                    // Update session storage with fresh data
+                    sessionStorage.setItem('currentDoctor', JSON.stringify(currentDoctor));
+                } else {
+                    console.error('❌ Doctor no longer exists in database');
+                    sessionStorage.removeItem('currentDoctor');
+                    window.location.href = 'doctor-login.html';
+                    return;
+                }
+                
+            } catch (error) {
+                console.error('❌ Error loading doctor data:', error);
+                showError('Failed to load doctor information. Please login again.');
+                sessionStorage.removeItem('currentDoctor');
+                setTimeout(() => {
+                    window.location.href = 'doctor-login.html';
+                }, 3000);
+            }
+        }
+
+        // Update doctor information in UI - SAFE VERSION
+        function updateDoctorUI() {
+            if (!currentDoctor) {
+                console.warn('⚠️ No current doctor data available');
+                return;
+            }
+
+            // Safe element updates with null checks
+            const elementsToUpdate = [
+                { id: 'doctor-name', value: currentDoctor.name },
+                { id: 'doctor-specialization', value: currentDoctor.specialization },
+                { id: 'doctor-hospital', value: currentDoctor.hospital },
+                { id: 'doctor-avatar', value: getInitials(currentDoctor.name) },
+                { id: 'sidebar-doctor-name', value: currentDoctor.name },
+                { id: 'appointments-doctor-name', value: currentDoctor.name },
+                { id: 'patients-doctor-name', value: currentDoctor.name },
+                { id: 'records-doctor-name', value: currentDoctor.name },
+                { id: 'prescriptions-doctor-name', value: currentDoctor.name },
+                { id: 'analytics-doctor-name', value: currentDoctor.name },
+                { id: 'profile-doctor-name', value: currentDoctor.name },
+                { id: 'settings-doctor-name', value: currentDoctor.name },
+                { id: 'welcome-doctor-name', value: currentDoctor.name },
+                { id: 'appointments-avatar', value: getInitials(currentDoctor.name) },
+                { id: 'patients-avatar', value: getInitials(currentDoctor.name) },
+                { id: 'records-avatar', value: getInitials(currentDoctor.name) },
+                { id: 'prescriptions-avatar', value: getInitials(currentDoctor.name) },
+                { id: 'analytics-avatar', value: getInitials(currentDoctor.name) },
+                { id: 'profile-avatar', value: getInitials(currentDoctor.name) },
+                { id: 'settings-avatar', value: getInitials(currentDoctor.name) }
+            ];
+
+            elementsToUpdate.forEach(item => {
+                const element = document.getElementById(item.id);
+                if (element) {
+                    element.textContent = item.value;
+                } else {
+                    console.warn(`⚠️ Element with id '${item.id}' not found`);
+                }
+            });
+        }
+
+        // Initialize navigation system
+        function initializeNavigation() {
+            // Navigation click handlers
+            const navItems = document.querySelectorAll('.nav-item[data-section]');
+            if (navItems.length === 0) {
+                console.error('❌ No navigation items found');
+                return;
+            }
+
+            navItems.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const sectionId = this.getAttribute('data-section');
+                    switchSection(sectionId);
+                });
+            });
+
+            // Logout handler
+            const logoutBtn = document.getElementById('logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    handleLogout();
+                });
+            } else {
+                console.error('❌ Logout button not found');
+            }
+
+            // Initialize default section from URL hash or default to dashboard
+            const hash = window.location.hash.substring(1);
+            const defaultSection = hash || 'dashboard';
+            switchSection(defaultSection);
+        }
+
+        // Switch between content sections
+        function switchSection(sectionId) {
+            console.log('Switching to section:', sectionId);
+            
+            // Remove active class from all nav items
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            // Remove active class from all content sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+
+            // Add active class to clicked nav item
+            const activeNavItem = document.querySelector(`[data-section="${sectionId}"]`);
+            if (activeNavItem) {
+                activeNavItem.classList.add('active');
+            }
+
+            // Show corresponding content section
+            const activeSection = document.getElementById(`${sectionId}-section`);
+            if (activeSection) {
+                activeSection.classList.add('active');
+                loadSectionContent(sectionId);
+            } else {
+                console.error(`❌ Section with id '${sectionId}-section' not found`);
+            }
+
+            // Update URL hash
+            window.location.hash = sectionId;
+        }
+
+        // Load content for each section
+        function loadSectionContent(sectionId) {
+            console.log(`Loading content for: ${sectionId}`);
+            
+            switch(sectionId) {
+                case 'dashboard':
+                    loadDashboardContent();
+                    break;
+                case 'appointments':
+                    loadAppointmentsContent();
+                    break;
+                case 'patients':
+                    loadPatientsContent();
+                    break;
+                case 'medical-records':
+                    loadMedicalRecordsContent();
+                    break;
+                case 'prescriptions':
+                    loadPrescriptionsContent();
+                    break;
+                case 'analytics':
+                    loadAnalyticsContent();
+                    break;
+                case 'profile':
+                    loadProfileContent();
+                    break;
+                case 'settings':
+                    loadSettingsContent();
+                    break;
+            }
+        }
+
+        // Setup all event listeners - SAFE VERSION
+        function setupEventListeners() {
+            const eventListeners = [
+                { id: 'manual-refresh-btn', event: 'click', handler: () => { loadDashboardContent(); showSuccess('Dashboard refreshed'); } },
+                { id: 'refresh-appointments-btn', event: 'click', handler: () => { loadDashboardContent(); showSuccess('Appointments refreshed'); } },
+                { id: 'new-appointment-btn', event: 'click', handler: () => showModal('schedule-appointment-modal') },
+                { id: 'schedule-appointment-btn', event: 'click', handler: () => showModal('schedule-appointment-modal') },
+                { id: 'add-patient-btn', event: 'click', handler: () => showModal('add-patient-modal') },
+                { id: 'quick-appointment-btn', event: 'click', handler: () => showModal('schedule-appointment-modal') },
+                { id: 'quick-patient-btn', event: 'click', handler: () => showModal('add-patient-modal') },
+                { id: 'cancel-add-patient', event: 'click', handler: () => hideModal('add-patient-modal') },
+                { id: 'cancel-appointment', event: 'click', handler: () => hideModal('schedule-appointment-modal') },
+                { id: 'new-record-btn', event: 'click', handler: () => showModal('clinical-modal') },
+                { id: 'new-prescription-btn', event: 'click', handler: () => showSuccess('Prescription feature coming soon') },
+                { id: 'generate-report-btn', event: 'click', handler: () => generateReport() },
+                { id: 'edit-profile-btn', event: 'click', handler: () => showSuccess('Edit profile feature coming soon') },
+                { id: 'change-password-btn', event: 'click', handler: () => showSuccess('Change password feature coming soon') },
+                { id: 'delete-account-btn', event: 'click', handler: () => confirmDeleteAccount() }
+            ];
+
+            eventListeners.forEach(listener => {
+                const element = document.getElementById(listener.id);
+                if (element) {
+                    element.addEventListener(listener.event, listener.handler);
+                } else {
+                    console.warn(`⚠️ Element with id '${listener.id}' not found for event listener`);
+                }
+            });
+
+            // Add patient form
+            const addPatientForm = document.getElementById('add-patient-form');
+            if (addPatientForm) {
+                addPatientForm.addEventListener('submit', handleAddPatient);
+            }
+
+            // Schedule appointment form
+            const scheduleAppointmentForm = document.getElementById('schedule-appointment-form');
+            if (scheduleAppointmentForm) {
+                scheduleAppointmentForm.addEventListener('submit', handleScheduleAppointment);
+            }
+
+            // Modal close buttons
+            document.querySelectorAll('.modal .close').forEach(closeBtn => {
+                closeBtn.addEventListener('click', function() {
+                    const modal = this.closest('.modal');
+                    if (modal) {
+                        modal.style.display = 'none';
+                    }
+                });
+            });
+
+            // Close modals when clicking outside
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        this.style.display = 'none';
+                    }
+                });
+            });
+
+            // Search functionality
+            const patientSearch = document.getElementById('patient-search');
+            if (patientSearch) {
+                patientSearch.addEventListener('input', handlePatientSearch);
+            }
+
+            const appointmentSearch = document.getElementById('appointment-search');
+            if (appointmentSearch) {
+                appointmentSearch.addEventListener('input', handleAppointmentSearch);
+            }
+
+            // Time period selector for analytics
+            const timePeriodSelect = document.getElementById('time-period-select');
+            if (timePeriodSelect) {
+                timePeriodSelect.addEventListener('change', loadAnalyticsContent);
+            }
+
+            // Filter buttons
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const filter = this.getAttribute('data-filter');
+                    setCurrentFilter(filter);
+                });
+            });
+        }
+
+        // Set current filter and update UI
+        function setCurrentFilter(filter) {
+            currentFilter = filter;
+            
+            // Update active state of filter buttons
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                if (btn.getAttribute('data-filter') === filter) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            // Refresh the current view
+            if (document.getElementById('dashboard-section').classList.contains('active')) {
+                loadDashboardContent();
+            } else if (document.getElementById('appointments-section').classList.contains('active')) {
+                loadAppointmentsContent();
+            }
+        }
+
+        // Load initial data
+        async function loadInitialData() {
+            try {
+                await loadDoctorAppointments();
+                await loadAllPatients();
+                await loadMedicalRecords();
+                await loadPrescriptions();
+                updateSidebarStats();
+            } catch (error) {
+                console.error('Error loading initial data:', error);
+                showError('Failed to load initial data');
+            }
+        }
+
+        // Section content loading functions
+        function loadDashboardContent() {
+            loadDoctorAppointments();
+        }
+
+        function loadAppointmentsContent() {
+            const container = document.getElementById('all-appointments-list');
+            if (!container) {
+                console.error('❌ Appointments container not found');
+                return;
+            }
+            
+            container.innerHTML = `
+                <div class="loading-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading appointments...</p>
+                </div>
+            `;
+            
+            // In a real implementation, this would load all appointments
+            setTimeout(() => {
+                const filteredAppointments = filterAppointmentsByUrgency(currentAppointments);
+                if (filteredAppointments.length > 0) {
+                    renderAppointmentsList(container, filteredAppointments);
+                } else {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-calendar-times"></i>
+                            <h3>No Appointments Found</h3>
+                            <p>No appointments scheduled at this time.</p>
+                        </div>
+                    `;
+                }
+            }, 1000);
+        }
+
+        function loadPatientsContent() {
+            const container = document.getElementById('patients-container');
+            if (!container) {
+                console.error('❌ Patients container not found');
+                return;
+            }
+            
+            container.innerHTML = `
+                <div class="loading-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading patients...</p>
+                </div>
+            `;
+            
+            // In a real implementation, this would load all patients
+            setTimeout(() => {
+                if (allPatients.length > 0) {
+                    renderPatientsList(container, allPatients);
+                } else {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-user-slash"></i>
+                            <h3>No Patients Found</h3>
+                            <p>No patients in the system yet.</p>
+                        </div>
+                    `;
+                }
+            }, 1000);
+        }
+
+        function loadMedicalRecordsContent() {
+            const container = document.getElementById('medical-records-list');
+            if (!container) {
+                console.error('❌ Medical records container not found');
+                return;
+            }
+            
+            container.innerHTML = `
+                <div class="loading-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading medical records...</p>
+                </div>
+            `;
+            
+            // In a real implementation, this would load medical records
+            setTimeout(() => {
+                if (allMedicalRecords.length > 0) {
+                    renderMedicalRecordsList(container, allMedicalRecords);
+                } else {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-file-medical"></i>
+                            <h3>No Medical Records</h3>
+                            <p>No medical records available yet.</p>
+                        </div>
+                    `;
+                }
+            }, 1000);
+        }
+
+        function loadPrescriptionsContent() {
+            const container = document.getElementById('prescriptions-list');
+            if (!container) {
+                console.error('❌ Prescriptions container not found');
+                return;
+            }
+            
+            container.innerHTML = `
+                <div class="loading-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading prescriptions...</p>
+                </div>
+            `;
+            
+            // In a real implementation, this would load prescriptions
+            setTimeout(() => {
+                if (allPrescriptions.length > 0) {
+                    renderPrescriptionsList(container, allPrescriptions);
+                } else {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-prescription-bottle-alt"></i>
+                            <h3>No Prescriptions</h3>
+                            <p>No prescriptions have been created yet.</p>
+                        </div>
+                    `;
+                }
+            }, 1000);
+        }
+
+        function loadAnalyticsContent() {
+            const timePeriod = document.getElementById('time-period-select').value;
+            console.log('Loading analytics for period:', timePeriod);
+            // In a real implementation, this would load analytics data based on time period
+        }
+
+        function loadProfileContent() {
+            const profileContainer = document.getElementById('profile-details');
+            const professionalContainer = document.getElementById('professional-details');
+            
+            if (!profileContainer || !professionalContainer) {
+                console.error('❌ Profile containers not found');
+                return;
+            }
+            
+            if (currentDoctor) {
+                profileContainer.innerHTML = `
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <div class="form-control" style="background: var(--light);">${currentDoctor.name}</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <div class="form-control" style="background: var(--light);">${currentDoctor.email}</div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <div class="form-control" style="background: var(--light);">${currentDoctor.phone}</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Location</label>
+                            <div class="form-control" style="background: var(--light);">${currentDoctor.location}</div>
+                        </div>
+                    </div>
+                `;
+                
+                professionalContainer.innerHTML = `
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Specialization</label>
+                            <div class="form-control" style="background: var(--light);">${currentDoctor.specialization}</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Hospital</label>
+                            <div class="form-control" style="background: var(--light);">${currentDoctor.hospital}</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Availability</label>
+                        <div class="form-control" style="background: var(--light);">${currentDoctor.availability}</div>
+                    </div>
+                `;
+            }
+        }
+
+        function loadSettingsContent() {
+            // Settings are already loaded in the HTML
+            console.log('Settings content loaded');
+        }
+
+        // Data loading functions
+        async function loadDoctorAppointments() {
+            const appointmentList = document.getElementById('appointment-list');
+            if (!appointmentList) {
+                console.error('❌ Appointment list container not found');
+                return;
+            }
+            
+            // Show loading state
+            appointmentList.innerHTML = `
+                <div class="loading-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading appointments from Firebase...</p>
+                </div>
+            `;
+
+            try {
+                console.log('🔍 Loading appointments from Firebase...');
+                const appointments = await loadAppointmentsFromFirebase();
+                currentAppointments = appointments;
+
+                console.log(`📊 Found ${currentAppointments.length} appointments for ${currentDoctor.name}`);
+                
+                const filteredAppointments = filterAppointmentsByUrgency(currentAppointments);
+                renderAppointmentsList(appointmentList, filteredAppointments);
+                updateDashboardStats();
+                updateSidebarStats();
+                
+            } catch (error) {
+                console.error('❌ Error loading appointments:', error);
+                appointmentList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h3>Error Loading Appointments</h3>
+                        <p>Failed to load appointments: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function loadAppointmentsFromFirebase() {
+            const appointments = [];
+            
+            try {
+                console.log('🔍 Loading appointments for doctor:', currentDoctor.name);
+                
+                // Load appointments from Firebase - using AllAppointments as in your Android code
+                const snapshot = await database.ref('MbararaHospital/AllAppointments').once('value');
+                
+                if (snapshot.exists()) {
+                    snapshot.forEach((appointmentSnapshot) => {
+                        const appointment = appointmentSnapshot.val();
+                        appointment.id = appointmentSnapshot.key;
+                        
+                        // Check if this appointment belongs to the current doctor
+                        const isAssignedToCurrentDoctor = 
+                            appointment.assignedDoctorId === currentDoctor.id || 
+                            appointment.assignedDoctorName === currentDoctor.name ||
+                            (appointment.assignedDoctorEmail && 
+                             appointment.assignedDoctorEmail.toLowerCase() === currentDoctor.email.toLowerCase());
+                        
+                        if (isAssignedToCurrentDoctor && appointment.status === 'scheduled') {
+                            console.log('✅ Found appointment for current doctor:', appointment.id);
+                            
+                            // Ensure urgency level and priority are set
+                            if (!appointment.urgencyLevel) {
+                                appointment.urgencyLevel = 'normal';
+                            }
+                            if (!appointment.priorityWeight) {
+                                appointment.priorityWeight = getPriorityWeight(appointment.urgencyLevel);
+                            }
+                            if (appointment.isEmergency === undefined) {
+                                appointment.isEmergency = appointment.urgencyLevel === 'emergency';
+                            }
+                            
+                            appointments.push(appointment);
+                        }
+                    });
+                } else {
+                    console.log('📭 No appointments found in Firebase');
+                    showInfo('No appointments found in the database');
+                }
+                
+                console.log(`📊 Found ${appointments.length} appointments for ${currentDoctor.name}`);
+                
+            } catch (error) {
+                console.error('❌ Error loading from Firebase:', error);
+                throw error;
+            }
+            
+            return appointments;
+        }
+
+        // Filter appointments by urgency level
+        function filterAppointmentsByUrgency(appointments) {
+            if (currentFilter === 'all') {
+                return appointments;
+            }
+            
+            return appointments.filter(appointment => {
+                const urgencyLevel = appointment.urgencyLevel || 'normal';
+                return urgencyLevel === currentFilter;
+            });
+        }
+
+        async function loadAllPatients() {
+            try {
+                console.log('🔍 Loading patients for doctor:', currentDoctor.name);
+                
+                // Load patients from Firebase
+                const snapshot = await database.ref('MbararaHospital/Patients').once('value');
+                allPatients = [];
+                
+                if (snapshot.exists()) {
+                    snapshot.forEach((patientSnapshot) => {
+                        const patientId = patientSnapshot.key;
+                        const patientData = patientSnapshot.val();
+                        
+                        // Check if this patient has been treated by the current doctor
+                        // We'll check if there are any appointments or medical records linking this patient to the doctor
+                        const hasDoctorAppointments = currentAppointments.some(apt => 
+                            apt.patientUsername === patientId
+                        );
+                        
+                        if (hasDoctorAppointments) {
+                            const patient = {
+                                id: patientId,
+                                name: patientData.name || 'Unknown Patient',
+                                age: patientData.age || 'Unknown',
+                                gender: patientData.gender || 'Unknown',
+                                lastVisit: patientData.lastVisit || 'Unknown',
+                                condition: patientData.condition || 'General Consultation',
+                                phone: patientData.phone || 'No phone',
+                                email: patientData.email || 'No email'
+                            };
+                            allPatients.push(patient);
+                        }
+                    });
+                }
+                
+                console.log(`📊 Found ${allPatients.length} patients for ${currentDoctor.name}`);
+                
+            } catch (error) {
+                console.error('❌ Error loading patients:', error);
+                showError('Failed to load patients: ' + error.message);
+            }
+        }
+
+        async function loadMedicalRecords() {
+            try {
+                console.log('🔍 Loading medical records for doctor:', currentDoctor.name);
+                
+                // Load medical records from Firebase
+                const snapshot = await database.ref('MbararaHospital/Examinations').once('value');
+                allMedicalRecords = [];
+                
+                if (snapshot.exists()) {
+                    snapshot.forEach((recordSnapshot) => {
+                        const recordId = recordSnapshot.key;
+                        const recordData = recordSnapshot.val();
+                        
+                        // Check if this record belongs to the current doctor
+                        const isDoctorRecord = 
+                            recordData.doctorId === currentDoctor.id || 
+                            recordData.doctor === currentDoctor.name;
+                        
+                        if (isDoctorRecord) {
+                            // Find the patient name from appointments
+                            const appointment = currentAppointments.find(apt => apt.id === recordId);
+                            const patientName = appointment ? 
+                                (appointment.patientName || appointment.patientUsername) : 
+                                'Unknown Patient';
+                            
+                            const record = {
+                                id: recordId,
+                                patientName: patientName,
+                                date: recordData.timestamp ? 
+                                    new Date(recordData.timestamp).toISOString().split('T')[0] : 
+                                    'Unknown date',
+                                diagnosis: recordData.diagnosis ? 
+                                    (recordData.diagnosis.final || 'No diagnosis') : 
+                                    'No diagnosis',
+                                treatment: recordData.treatment ? 
+                                    (recordData.treatment.prescription || 'No treatment') : 
+                                    'No treatment'
+                            };
+                            allMedicalRecords.push(record);
+                        }
+                    });
+                }
+                
+                console.log(`📊 Found ${allMedicalRecords.length} medical records for ${currentDoctor.name}`);
+                
+            } catch (error) {
+                console.error('❌ Error loading medical records:', error);
+                showError('Failed to load medical records: ' + error.message);
+            }
+        }
+
+        async function loadPrescriptions() {
+            try {
+                console.log('🔍 Loading prescriptions for doctor:', currentDoctor.name);
+                
+                // Load prescriptions from Firebase
+                const snapshot = await database.ref('MbararaHospital/Prescriptions').once('value');
+                allPrescriptions = [];
+                
+                if (snapshot.exists()) {
+                    snapshot.forEach((prescriptionSnapshot) => {
+                        const prescriptionId = prescriptionSnapshot.key;
+                        const prescriptionData = prescriptionSnapshot.val();
+                        
+                        // Check if this prescription belongs to the current doctor
+                        const isDoctorPrescription = 
+                            prescriptionData.doctorId === currentDoctor.id || 
+                            prescriptionData.doctorName === currentDoctor.name;
+                        
+                        if (isDoctorPrescription) {
+                            // Find the patient name from appointments
+                            const appointment = currentAppointments.find(apt => 
+                                apt.id === prescriptionData.appointmentId
+                            );
+                            const patientName = appointment ? 
+                                (appointment.patientName || appointment.patientUsername) : 
+                                'Unknown Patient';
+                            
+                            const prescription = {
+                                id: prescriptionId,
+                                patientName: patientName,
+                                medication: prescriptionData.medication || 'Unknown medication',
+                                dosage: prescriptionData.dosage || 'Unknown dosage',
+                                frequency: prescriptionData.frequency || 'Unknown frequency',
+                                status: prescriptionData.status || 'Active'
+                            };
+                            allPrescriptions.push(prescription);
+                        }
+                    });
+                }
+                
+                console.log(`📊 Found ${allPrescriptions.length} prescriptions for ${currentDoctor.name}`);
+                
+            } catch (error) {
+                console.error('❌ Error loading prescriptions:', error);
+                showError('Failed to load prescriptions: ' + error.message);
+            }
+        }
+
+        // Rendering functions
+        function renderAppointmentsList(container, appointments) {
+            if (appointments.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-user-md"></i>
+                        <h3>No Appointments Found</h3>
+                        <p>No appointments found for <strong>${currentDoctor.name}</strong></p>
+                        <p><small>If you believe this is an error, please contact the reception.</small></p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort appointments by priority (emergency first)
+            const sortedAppointments = [...appointments].sort((a, b) => {
+                const priorityA = a.priorityWeight || getPriorityWeight(a.urgencyLevel);
+                const priorityB = b.priorityWeight || getPriorityWeight(b.urgencyLevel);
+                return priorityB - priorityA;
+            });
+
+            container.innerHTML = sortedAppointments.map(appointment => {
+                let displayStatus = appointment.status || 'scheduled';
+                let displayStatusText = formatStatus(displayStatus);
+                
+                // Get urgency level and styling
+                const urgencyLevel = appointment.urgencyLevel || 'normal';
+                const urgencyInfo = getUrgencyInfo(urgencyLevel);
+                const priorityWeight = appointment.priorityWeight || getPriorityWeight(urgencyLevel);
+                const isEmergency = appointment.isEmergency || urgencyLevel === 'emergency';
+                
+                // Format date properly
+                const appointmentDate = appointment.preferredDate || new Date().toISOString().split('T')[0];
+                const formattedDate = formatDate(appointmentDate);
+                
+                return `
+                <div class="appointment-item ${urgencyInfo.className}" data-priority="${priorityWeight}">
+                    <div class="patient-avatar ${urgencyInfo.className}">
+                        ${getInitials(appointment.patientName || appointment.patientUsername)}
+                        ${isEmergency ? '<div class="emergency-badge">🚨</div>' : ''}
+                    </div>
+                    <div class="patient-details">
+                        <div class="patient-header">
+                            <h4>${appointment.patientName || appointment.patientUsername || 'Unknown Patient'}</h4>
+                            <div class="urgency-badge ${urgencyInfo.className}">
+                                <i class="${urgencyInfo.icon}"></i>
+                                ${urgencyInfo.displayText}
+                            </div>
+                        </div>
+                        <p>${appointment.department || 'General Consultation'} • Token: ${appointment.tokenNumber || 'Not assigned'}</p>
+                        <p>Reason: ${appointment.visitReason || 'Not specified'}</p>
+                        <div class="priority-indicator">
+                            <div class="priority-dot ${urgencyInfo.className}"></div>
+                            <span>Priority Level: ${urgencyInfo.displayText}</span>
+                        </div>
+                        <small>Appointment ID: ${appointment.id}</small>
+                        <div class="workflow-status status-${displayStatus}">
+                            <i class="fas fa-${getStatusIcon(displayStatus)}"></i>
+                            ${displayStatusText}
+                        </div>
+                    </div>
+                    <div class="appointment-time">
+                        <div class="time">${appointment.allocatedTime || appointment.preferredTime || 'Not scheduled'}</div>
+                        <div class="date">${formattedDate}</div>
+                    </div>
+                    <div class="appointment-actions">
+                        ${displayStatus === 'scheduled' || displayStatus === 'doctor_assigned' || !displayStatus ? `
+                        <button class="btn btn-primary start-examination-btn" data-id="${appointment.id}" data-user="${appointment.patientUsername}">
+                            <i class="fas fa-stethoscope"></i> Start Examination
+                        </button>
+                        ` : ''}
+                        
+                        ${displayStatus === 'doctor_completed' ? `
+                        <button class="btn btn-success" disabled>
+                            <i class="fas fa-check"></i> Examination Completed
+                        </button>
+                        ` : ''}
+                    </div>
+                </div>
+                `;
+            }).join('');
+
+            // Add event listeners to examination buttons
+            container.querySelectorAll('.start-examination-btn').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const appointmentId = this.getAttribute('data-id');
+                    const patientUsername = this.getAttribute('data-user');
+                    openClinicalModal(appointmentId, patientUsername);
+                });
+            });
+        }
+
+        function renderPatientsList(container, patients) {
+            if (patients.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-user-slash"></i>
+                        <h3>No Patients Found</h3>
+                        <p>No patients found for <strong>${currentDoctor.name}</strong></p>
+                        <p><small>Patients will appear here once they have appointments with you.</small></p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = patients.map(patient => {
+                return `
+                <div class="patient-card">
+                    <div class="patient-card-header">
+                        <div class="patient-avatar-sm">${getInitials(patient.name)}</div>
+                        <div class="patient-info">
+                            <h4>${patient.name}</h4>
+                            <p>${patient.gender}, ${patient.age} years</p>
+                        </div>
+                    </div>
+                    <ul class="patient-details-list">
+                        <li>
+                            <span>Last Visit:</span>
+                            <span>${formatDate(patient.lastVisit)}</span>
+                        </li>
+                        <li>
+                            <span>Condition:</span>
+                            <span>${patient.condition}</span>
+                        </li>
+                        <li>
+                            <span>Phone:</span>
+                            <span>${patient.phone}</span>
+                        </li>
+                    </ul>
+                    <div class="appointment-actions" style="margin-top: 15px;">
+                        <button class="btn btn-primary btn-sm view-patient-btn" data-id="${patient.id}">
+                            <i class="fas fa-eye"></i> View
+                        </button>
+                        <button class="btn btn-secondary btn-sm edit-patient-btn" data-id="${patient.id}">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                    </div>
+                </div>
+                `;
+            }).join('');
+
+            // Add event listeners to patient buttons
+            container.querySelectorAll('.view-patient-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const patientId = this.getAttribute('data-id');
+                    viewPatientDetails(patientId);
+                });
+            });
+
+            container.querySelectorAll('.edit-patient-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const patientId = this.getAttribute('data-id');
+                    editPatient(patientId);
+                });
+            });
+        }
+
+        function renderMedicalRecordsList(container, records) {
+            if (records.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-file-medical"></i>
+                        <h3>No Medical Records</h3>
+                        <p>No medical records found for <strong>${currentDoctor.name}</strong></p>
+                        <p><small>Medical records will appear here once you complete patient examinations.</small></p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = records.map(record => {
+                return `
+                <div class="appointment-item">
+                    <div class="patient-avatar">${getInitials(record.patientName)}</div>
+                    <div class="patient-details">
+                        <h4>${record.patientName}</h4>
+                        <p>Diagnosis: ${record.diagnosis}</p>
+                        <p>Treatment: ${record.treatment}</p>
+                    </div>
+                    <div class="appointment-time">
+                        <div class="date">${formatDate(record.date)}</div>
+                    </div>
+                    <div class="appointment-actions">
+                        <button class="btn btn-primary btn-sm view-record-btn" data-id="${record.id}">
+                            <i class="fas fa-eye"></i> View
+                        </button>
+                        <button class="btn btn-secondary btn-sm edit-record-btn" data-id="${record.id}">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function renderPrescriptionsList(container, prescriptions) {
+            if (prescriptions.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-prescription-bottle-alt"></i>
+                        <h3>No Prescriptions</h3>
+                        <p>No prescriptions found for <strong>${currentDoctor.name}</strong></p>
+                        <p><small>Prescriptions will appear here once you prescribe medications to patients.</small></p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = prescriptions.map(prescription => {
+                return `
+                <div class="appointment-item">
+                    <div class="patient-avatar">${getInitials(prescription.patientName)}</div>
+                    <div class="patient-details">
+                        <h4>${prescription.patientName}</h4>
+                        <p>${prescription.medication} - ${prescription.dosage}</p>
+                        <p>Frequency: ${prescription.frequency}</p>
+                    </div>
+                    <div class="appointment-time">
+                        <div class="status-badge status-${prescription.status.toLowerCase()}">${prescription.status}</div>
+                    </div>
+                    <div class="appointment-actions">
+                        <button class="btn btn-primary btn-sm view-prescription-btn" data-id="${prescription.id}">
+                            <i class="fas fa-eye"></i> View
+                        </button>
+                        <button class="btn btn-secondary btn-sm renew-prescription-btn" data-id="${prescription.id}">
+                            <i class="fas fa-redo"></i> Renew
+                        </button>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        // Update dashboard statistics
+        function updateDashboardStats() {
+            const todayPatients = currentAppointments.length;
+            const assignedPatients = currentAppointments.filter(apt => 
+                apt.status === 'scheduled' || apt.status === 'doctor_assigned' || !apt.status
+            ).length;
+            const completedExaminations = currentAppointments.filter(apt => 
+                apt.status === 'doctor_completed'
+            ).length;
+            const emergencyCases = currentAppointments.filter(apt => 
+                apt.urgencyLevel === 'emergency' || apt.isEmergency
+            ).length;
+
+            // Safely update stats
+            const statsToUpdate = [
+                { id: 'today-patients-count', value: todayPatients },
+                { id: 'confirmed-appointments-count', value: assignedPatients },
+                { id: 'pending-consultations-count', value: assignedPatients - completedExaminations },
+                { id: 'emergency-cases-count', value: emergencyCases }
+            ];
+
+            statsToUpdate.forEach(stat => {
+                const element = document.getElementById(stat.id);
+                if (element) {
+                    element.textContent = stat.value;
+                }
+            });
+        }
+
+        // Update sidebar statistics
+        function updateSidebarStats() {
+            const todayPatients = currentAppointments ? currentAppointments.length : 0;
+            const pendingCount = currentAppointments ? currentAppointments.filter(apt => 
+                apt.status === 'scheduled' || apt.status === 'doctor_assigned' || !apt.status
+            ).length : 0;
+            const emergencyCount = currentAppointments ? currentAppointments.filter(apt => 
+                apt.urgencyLevel === 'emergency' || apt.isEmergency
+            ).length : 0;
+
+            // Safely update sidebar stats
+            const sidebarStats = [
+                { id: 'sidebar-today-patients', value: todayPatients },
+                { id: 'sidebar-pending', value: pendingCount },
+                { id: 'sidebar-emergency', value: emergencyCount },
+                { id: 'dashboard-badge', value: todayPatients },
+                { id: 'appointments-badge', value: pendingCount },
+                { id: 'patients-badge', value: allPatients.length },
+                { id: 'prescriptions-badge', value: allPrescriptions.length }
+            ];
+
+            sidebarStats.forEach(stat => {
+                const element = document.getElementById(stat.id);
+                if (element) {
+                    element.textContent = stat.value;
+                }
+            });
+        }
+
+        // Modal functions
+        function showModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'flex';
+            } else {
+                console.error(`❌ Modal with id '${modalId}' not found`);
+            }
+        }
+
+        function hideModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // Clinical examination modal
+        function openClinicalModal(appointmentId, patientUsername) {
+            const appointment = currentAppointments.find(apt => 
+                apt.id === appointmentId && apt.patientUsername === patientUsername
+            );
+            
+            if (appointment) {
+                // Format date for display
+                const appointmentDate = appointment.preferredDate || new Date().toISOString().split('T')[0];
+                const formattedDate = formatDate(appointmentDate);
+                
+                // Populate modal with appointment data
+                const modalBody = document.querySelector('#clinical-modal .modal-body');
+                modalBody.innerHTML = `
+                    <div class="form-group">
+                        <label for="clinical-patient-name">Patient Name</label>
+                        <input type="text" id="clinical-patient-name" class="form-control" value="${appointment.patientName || appointment.patientUsername || 'Unknown Patient'}" readonly>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="clinical-patient-id">Patient ID</label>
+                            <input type="text" id="clinical-patient-id" class="form-control" value="${appointment.patientUsername || 'N/A'}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="clinical-appointment-time">Appointment Details</label>
+                            <input type="text" id="clinical-appointment-time" class="form-control" value="${formattedDate} at ${appointment.allocatedTime || appointment.preferredTime || 'Not scheduled'}" readonly>
+                        </div>
+                    </div>
+
+                    <!-- Urgency Level Display -->
+                    <div class="clinical-section">
+                        <h4><i class="fas fa-exclamation-triangle"></i> Urgency Level</h4>
+                        <div class="urgency-badge ${getUrgencyInfo(appointment.urgencyLevel).className}" style="font-size: 1rem; padding: 10px 15px;">
+                            <i class="${getUrgencyInfo(appointment.urgencyLevel).icon}"></i>
+                            ${getUrgencyInfo(appointment.urgencyLevel).displayText}
+                        </div>
+                        <p style="margin-top: 10px; font-size: 0.9rem; color: var(--gray);">
+                            Priority Weight: ${appointment.priorityWeight || getPriorityWeight(appointment.urgencyLevel)}
+                        </p>
+                    </div>
+
+                    <!-- Vital Signs Section -->
+                    <div class="clinical-section">
+                        <h4><i class="fas fa-heartbeat"></i> Vital Signs</h4>
+                        <div class="vital-signs-grid">
+                            <div class="vital-input-group">
+                                <label for="vital-bp">Blood Pressure (mmHg)</label>
+                                <input type="text" id="vital-bp" class="vital-input" placeholder="120/80">
+                            </div>
+                            <div class="vital-input-group">
+                                <label for="vital-pulse">Pulse Rate (bpm)</label>
+                                <input type="number" id="vital-pulse" class="vital-input" placeholder="72">
+                            </div>
+                            <div class="vital-input-group">
+                                <label for="vital-temp">Temperature (°C)</label>
+                                <input type="number" id="vital-temp" class="vital-input" placeholder="36.6" step="0.1">
+                            </div>
+                            <div class="vital-input-group">
+                                <label for="vital-spo2">SpO2 (%)</label>
+                                <input type="number" id="vital-spo2" class="vital-input" placeholder="98" min="0" max="100">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Clinical Findings Section -->
+                    <div class="clinical-section">
+                        <h4><i class="fas fa-search"></i> Clinical Findings</h4>
+                        <div class="clinical-findings-grid">
+                            <div class="form-group">
+                                <label for="chief-complaints">Chief Complaints</label>
+                                <textarea id="chief-complaints" class="form-control" rows="3" placeholder="Patient's main complaints...">${appointment.visitReason || ''}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="clinical-observations">Clinical Observations</label>
+                                <textarea id="clinical-observations" class="form-control" rows="3" placeholder="Physical examination findings..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Diagnosis & Treatment Section -->
+                    <div class="clinical-section">
+                        <h4><i class="fas fa-diagnoses"></i> Diagnosis & Treatment</h4>
+                        <div class="form-group">
+                            <label for="final-diagnosis">Diagnosis</label>
+                            <textarea id="final-diagnosis" class="form-control" rows="2" placeholder="Primary diagnosis..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="prescription">Prescription</label>
+                            <textarea id="prescription" class="form-control" rows="3" placeholder="Medications and dosage..."></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button class="btn btn-success" id="complete-examination-btn">
+                            <i class="fas fa-check-circle"></i> Complete Examination
+                        </button>
+                        <button class="btn btn-primary" id="save-draft-btn">
+                            <i class="fas fa-save"></i> Save Draft
+                        </button>
+                        <button class="btn btn-danger" id="cancel-examination-btn">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                    </div>
+                `;
+                
+                // Add event listeners for the modal buttons
+                document.getElementById('complete-examination-btn').addEventListener('click', () => {
+                    completeExamination(appointmentId, patientUsername);
+                });
+                
+                document.getElementById('save-draft-btn').addEventListener('click', () => {
+                    saveExaminationDraft(appointmentId, patientUsername);
+                });
+                
+                document.getElementById('cancel-examination-btn').addEventListener('click', () => {
+                    hideModal('clinical-modal');
+                });
+                
+                // Show modal
+                showModal('clinical-modal');
+                
+                // Store current appointment data
+                currentExaminationData = {
+                    appointmentId: appointmentId,
+                    patientUsername: patientUsername,
+                    appointment: appointment
+                };
+            }
+        }
+
+        // Form handlers
+        async function handleAddPatient(e) {
+            e.preventDefault();
+            
+            const formData = {
+                firstName: document.getElementById('patient-first-name').value,
+                lastName: document.getElementById('patient-last-name').value,
+                dob: document.getElementById('patient-dob').value,
+                gender: document.getElementById('patient-gender').value,
+                phone: document.getElementById('patient-phone').value,
+                email: document.getElementById('patient-email').value,
+                address: document.getElementById('patient-address').value
+            };
+            
+            try {
+                // In a real implementation, this would save to Firebase
+                console.log('Adding new patient:', formData);
+                
+                // Create a new patient object
+                const newPatient = {
+                    id: Date.now().toString(),
+                    name: `${formData.firstName} ${formData.lastName}`,
+                    age: calculateAge(formData.dob),
+                    gender: formData.gender,
+                    lastVisit: new Date().toISOString().split('T')[0],
+                    condition: 'New Patient',
+                    phone: formData.phone
+                };
+                
+                allPatients.push(newPatient);
+                
+                // Update UI
+                updateSidebarStats();
+                if (document.getElementById('patients-section').classList.contains('active')) {
+                    loadPatientsContent();
+                }
+                
+                // Show success message and close modal
+                showSuccess('Patient added successfully!');
+                hideModal('add-patient-modal');
+                
+                // Reset form
+                document.getElementById('add-patient-form').reset();
+                
+            } catch (error) {
+                console.error('Error adding patient:', error);
+                showError('Failed to add patient: ' + error.message);
+            }
+        }
+
+        async function handleScheduleAppointment(e) {
+            e.preventDefault();
+            
+            const formData = {
+                patient: document.getElementById('appointment-patient').value,
+                date: document.getElementById('appointment-date').value,
+                time: document.getElementById('appointment-time').value,
+                type: document.getElementById('appointment-type').value,
+                notes: document.getElementById('appointment-notes').value
+            };
+            
+            try {
+                // In a real implementation, this would save to Firebase
+                console.log('Scheduling new appointment:', formData);
+                
+                // Show success message and close modal
+                showSuccess('Appointment scheduled successfully!');
+                hideModal('schedule-appointment-modal');
+                
+                // Reset form
+                document.getElementById('schedule-appointment-form').reset();
+                
+            } catch (error) {
+                console.error('Error scheduling appointment:', error);
+                showError('Failed to schedule appointment: ' + error.message);
+            }
+        }
+
+        // Search handlers
+        function handlePatientSearch(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const filteredPatients = allPatients.filter(patient => 
+                patient.name.toLowerCase().includes(searchTerm) ||
+                patient.condition.toLowerCase().includes(searchTerm)
+            );
+            
+            const container = document.getElementById('patients-container');
+            if (container) {
+                renderPatientsList(container, filteredPatients);
+            }
+        }
+
+        function handleAppointmentSearch(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const filteredAppointments = currentAppointments.filter(appointment => 
+                (appointment.patientName || appointment.patientUsername || '').toLowerCase().includes(searchTerm) ||
+                (appointment.department || '').toLowerCase().includes(searchTerm)
+            );
+            
+            const container = document.getElementById('all-appointments-list');
+            if (container) {
+                renderAppointmentsList(container, filteredAppointments);
+            }
+        }
+
+        // Clinical examination functions
+        async function completeExamination(appointmentId, patientUsername) {
+            // Collect examination data
+            const examinationData = {
+                vitalSigns: {
+                    bloodPressure: document.getElementById('vital-bp').value,
+                    pulse: document.getElementById('vital-pulse').value,
+                    temperature: document.getElementById('vital-temp').value,
+                    spo2: document.getElementById('vital-spo2').value
+                },
+                findings: {
+                    chiefComplaints: document.getElementById('chief-complaints').value,
+                    clinicalObservations: document.getElementById('clinical-observations').value
+                },
+                diagnosis: {
+                    final: document.getElementById('final-diagnosis').value
+                },
+                treatment: {
+                    prescription: document.getElementById('prescription').value
+                },
+                timestamp: new Date().toISOString(),
+                doctor: currentDoctor.name,
+                doctorId: currentDoctor.id,
+                status: 'completed'
+            };
+
+            try {
+                // Save to Firebase
+                const examinationRef = database.ref(`MbararaHospital/Examinations/${appointmentId}`);
+                await examinationRef.set(examinationData);
+                
+                // Update appointment status
+                const appointmentRef = database.ref(`MbararaHospital/AllAppointments/${appointmentId}`);
+                await appointmentRef.update({
+                    status: 'doctor_completed',
+                    examinationCompletedAt: new Date().toISOString()
+                });
+
+                showSuccess('Examination completed successfully!');
+                hideModal('clinical-modal');
+                
+                // Refresh appointments
+                await loadDoctorAppointments();
+                
+            } catch (error) {
+                console.error('Error completing examination:', error);
+                showError('Failed to complete examination: ' + error.message);
+            }
+        }
+
+        async function saveExaminationDraft(appointmentId, patientUsername) {
+            // Collect examination data
+            const examinationData = {
+                vitalSigns: {
+                    bloodPressure: document.getElementById('vital-bp').value,
+                    pulse: document.getElementById('vital-pulse').value,
+                    temperature: document.getElementById('vital-temp').value,
+                    spo2: document.getElementById('vital-spo2').value
+                },
+                findings: {
+                    chiefComplaints: document.getElementById('chief-complaints').value,
+                    clinicalObservations: document.getElementById('clinical-observations').value
+                },
+                diagnosis: {
+                    final: document.getElementById('final-diagnosis').value
+                },
+                treatment: {
+                    prescription: document.getElementById('prescription').value
+                },
+                timestamp: new Date().toISOString(),
+                doctor: currentDoctor.name,
+                doctorId: currentDoctor.id,
+                status: 'draft'
+            };
+
+            try {
+                // Save to Firebase
+                const draftRef = database.ref(`MbararaHospital/ExaminationDrafts/${appointmentId}`);
+                await draftRef.set(examinationData);
+                showSuccess('Examination draft saved successfully');
+            } catch (error) {
+                console.error('Error saving draft:', error);
+                showError('Failed to save draft: ' + error.message);
+            }
+        }
+
+        // Session management
+        function setupSessionManagement() {
+            // Check session expiry (8 hours)
+            const loginTime = sessionStorage.getItem('doctorLoginTime');
+            if (loginTime) {
+                const loginDate = new Date(loginTime);
+                const now = new Date();
+                const hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+                
+                if (hoursDiff > 8) {
+                    sessionStorage.removeItem('currentDoctor');
+                    sessionStorage.removeItem('doctorLoginTime');
+                    window.location.href = 'doctor-login.html';
+                    return;
+                }
+            }
+            
+            // Auto-refresh session
+            setInterval(() => {
+                const currentDoctor = sessionStorage.getItem('currentDoctor');
+                if (currentDoctor) {
+                    sessionStorage.setItem('doctorLoginTime', new Date().toISOString());
+                }
+            }, 30 * 60 * 1000); // Refresh every 30 minutes
+        }
+
+        // Logout function
+        async function handleLogout() {
+            if (confirm('Are you sure you want to logout?')) {
+                // Clear session storage
+                sessionStorage.removeItem('currentDoctor');
+                sessionStorage.removeItem('doctorLoginTime');
+                
+                // Show logout message
+                showSuccess('Logout successful. Redirecting to login...');
+                
+                // Redirect to login page after short delay
+                setTimeout(() => {
+                    window.location.href = 'doctor-login.html';
+                }, 1500);
+            }
+        }
+
+        // Utility functions
+        function getInitials(name) {
+            if (!name) return '??';
+            return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        }
+
+        function getStatusIcon(status) {
+            switch(status) {
+                case 'scheduled': return 'user-clock';
+                case 'doctor_assigned': return 'user-md';
+                case 'doctor_completed': return 'check-circle';
+                case 'completed': return 'check-double';
+                default: return 'clock';
+            }
+        }
+
+        function formatStatus(status) {
+            const statusMap = {
+                'scheduled': 'Scheduled for Examination',
+                'doctor_assigned': 'Assigned for Examination', 
+                'doctor_completed': 'Examination Completed',
+                'completed': 'Treatment Completed'
+            };
+            return statusMap[status] || 'Scheduled';
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'No date';
+            
+            try {
+                const date = new Date(dateString);
+                if (isNaN(date.getTime())) {
+                    return dateString; // Return original if invalid date
+                }
+                return date.toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
+            } catch (error) {
+                return dateString; // Return original if parsing fails
+            }
+        }
+
+        function calculateAge(dob) {
+            const birthDate = new Date(dob);
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const monthDiff = today.getMonth() - birthDate.getMonth();
+            
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            
+            return age;
+        }
+
+        // Urgency level utility functions
+        function getUrgencyInfo(urgencyLevel) {
+            const level = (urgencyLevel || 'normal').toLowerCase();
+            
+            switch(level) {
+                case 'emergency':
+                    return {
+                        className: 'emergency',
+                        displayText: '🚨 EMERGENCY',
+                        icon: 'fas fa-exclamation-triangle',
+                        priority: 3
+                    };
+                case 'urgent':
+                    return {
+                        className: 'urgent',
+                        displayText: '⚠️ URGENT',
+                        icon: 'fas fa-exclamation-circle',
+                        priority: 2
+                    };
+                case 'normal':
+                default:
+                    return {
+                        className: 'normal',
+                        displayText: '⏱ NORMAL',
+                        icon: 'fas fa-clock',
+                        priority: 1
+                    };
+            }
+        }
+
+        function getPriorityWeight(urgencyLevel) {
+            const level = (urgencyLevel || 'normal').toLowerCase();
+            
+            switch(level) {
+                case 'emergency': return 3;
+                case 'urgent': return 2;
+                case 'normal': 
+                default: return 1;
+            }
+        }
+
+        function generateReport() {
+            showSuccess('Report generation started. You will be notified when it is ready.');
+            // In a real implementation, this would generate a PDF report
+        }
+
+        function viewPatientDetails(patientId) {
+            const patient = allPatients.find(p => p.id === patientId);
+            if (patient) {
+                showSuccess(`Viewing details for ${patient.name}`);
+                // In a real implementation, this would open a patient details modal
+            }
+        }
+
+        function editPatient(patientId) {
+            const patient = allPatients.find(p => p.id === patientId);
+            if (patient) {
+                showSuccess(`Editing patient: ${patient.name}`);
+                // In a real implementation, this would open an edit patient modal
+            }
+        }
+
+        function confirmDeleteAccount() {
+            if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+                showError('Account deletion is not implemented in this demo.');
+            }
+        }
+
+        // Notification functions
+        function showSuccess(message) {
+            showNotification(message, 'var(--success)');
+        }
+
+        function showError(message) {
+            showNotification(message, 'var(--danger)');
+        }
+
+        function showInfo(message) {
+            showNotification(message, 'var(--info)');
+        }
+
+        function showNotification(message, color) {
+            // Remove existing notifications
+            const existingNotifications = document.querySelectorAll('.custom-notification');
+            existingNotifications.forEach(notification => notification.remove());
+
+            const notification = document.createElement('div');
+            notification.className = 'custom-notification';
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${color};
+                color: white;
+                padding: 15px 20px;
+                border-radius: 10px;
+                box-shadow: var(--shadow);
+                z-index: 10000;
+                animation: slideInRight 0.3s ease;
+                max-width: 400px;
+                word-wrap: break-word;
+            `;
+            notification.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-${color.includes('success') ? 'check-circle' : color.includes('danger') ? 'exclamation-triangle' : 'info-circle'}"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.style.animation = 'slideOutRight 0.3s ease';
+                    setTimeout(() => notification.remove(), 300);
+                }
+            }, 4000);
+        }
+
+        // Add CSS for animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideInRight {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            
+            @keyframes slideOutRight {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Handle browser back/forward buttons
+        window.addEventListener('hashchange', function() {
+            const sectionId = window.location.hash.substring(1);
+            if (sectionId) {
+                switchSection(sectionId);
+            }
+        });
+
+        console.log('✅ Doctor Dashboard with urgency level implementation initialized successfully');
+    </script>
+</body>
+</html>

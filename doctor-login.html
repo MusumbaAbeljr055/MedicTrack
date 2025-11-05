@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Login - MedConnect</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        :root {
+            --primary: #2c5aa0;
+            --primary-light: #4a7bc8;
+            --primary-dark: #1e3a6c;
+            --secondary: #1a936f;
+            --secondary-light: #2bbd92;
+            --secondary-dark: #0f7a58;
+            --danger: #e74c3c;
+            --danger-light: #ff6b6b;
+            --warning: #f39c12;
+            --warning-light: #f7c46c;
+            --success: #27ae60;
+            --success-light: #58d68d;
+            --info: #17a2b8;
+            --info-light: #5dade2;
+            --light: #f8f9fa;
+            --light-gray: #e9ecef;
+            --dark: #343a40;
+            --gray: #6c757d;
+            --border: #e0e0e0;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --card-shadow: 0 8px 16px rgba(0, 0, 0, 0.05);
+            --hover-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            overflow: hidden;
+        }
+
+        .login-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-header:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--secondary) 0%, var(--secondary-light) 100%);
+        }
+
+        .login-header h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .login-header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .login-body {
+            padding: 40px 30px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 0.95rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: var(--light);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.1);
+        }
+
+        .input-with-icon {
+            position: relative;
+        }
+
+        .input-with-icon i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+        }
+
+        .input-with-icon .form-control {
+            padding-left: 50px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1rem;
+            letter-spacing: 0.3px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(44, 90, 160, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(44, 90, 160, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: 20px;
+            color: var(--gray);
+        }
+
+        .loading-state i {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .error-message {
+            background: rgba(231, 76, 60, 0.1);
+            border: 1px solid rgba(231, 76, 60, 0.2);
+            color: var(--danger);
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .success-message {
+            background: rgba(39, 174, 96, 0.1);
+            border: 1px solid rgba(39, 174, 96, 0.2);
+            color: var(--success);
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .login-footer {
+            text-align: center;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        .demo-accounts {
+            background: rgba(44, 90, 160, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .demo-accounts h4 {
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .doctors-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .doctor-account {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 5px;
+            margin-bottom: 5px;
+        }
+
+        .doctor-account:hover {
+            background: rgba(44, 90, 160, 0.1);
+        }
+
+        .doctor-account:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .doctor-account .email {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .doctor-account .password {
+            color: var(--success);
+            font-family: monospace;
+        }
+
+        .doctor-account .name {
+            font-size: 0.75rem;
+            color: var(--gray);
+            margin-top: 2px;
+        }
+
+        .doctor-info {
+            flex: 1;
+        }
+
+        .refresh-btn {
+            background: transparent;
+            border: none;
+            color: var(--primary);
+            cursor: pointer;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 10px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            background: rgba(44, 90, 160, 0.1);
+        }
+
+        @media (max-width: 480px) {
+            .login-header {
+                padding: 30px 20px;
+            }
+            
+            .login-body {
+                padding: 30px 20px;
+            }
+            
+            .login-header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .doctor-account {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>
+                <i class="fas fa-stethoscope"></i>
+                MedConnect
+            </h1>
+            <p>Doctor Portal - Secure Login</p>
+        </div>
+        
+        <div class="login-body">
+            <div class="demo-accounts">
+                <h4><i class="fas fa-user-md"></i> Available Doctors</h4>
+                <div class="doctors-list" id="doctors-list">
+                    <div class="loading-state">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Loading doctors from database...</p>
+                    </div>
+                </div>
+                <button class="refresh-btn" id="refresh-doctors-btn">
+                    <i class="fas fa-sync-alt"></i> Refresh List
+                </button>
+            </div>
+
+            <div class="error-message" id="error-message"></div>
+            <div class="success-message" id="success-message"></div>
+            
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="email" class="form-control" placeholder="Enter your email" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="password" class="form-control" placeholder="Enter your password" required>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" id="login-btn">
+                    <i class="fas fa-sign-in-alt"></i> Sign In
+                </button>
+            </form>
+            
+            <div class="login-footer">
+                <p>Secure access to patient management system</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyANXmDNeF8abHC8Op8pYCHDEhA3A-ueIEE",
+            authDomain: "azimbalife055.firebaseapp.com",
+            databaseURL: "https://azimbalife055-default-rtdb.firebaseio.com",
+            projectId: "azimbalife055",
+            storageBucket: "azimbalife055.firebasestorage.app",
+            messagingSenderId: "78443464091",
+            appId: "1:78443464091:web:4efbe24a38f30adf4ecd3e"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // Global variables
+        let currentDoctor = null;
+        let allDoctors = [];
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+        });
+
+        function initializeApp() {
+            setupEventListeners();
+            loadDoctorsFromFirebase();
+            
+            // Check if doctor is already logged in
+            const savedDoctor = sessionStorage.getItem('currentDoctor');
+            if (savedDoctor) {
+                currentDoctor = JSON.parse(savedDoctor);
+                window.location.href = 'doctor-dashboard.html';
+            }
+        }
+
+        function setupEventListeners() {
+            document.getElementById('login-form').addEventListener('submit', handleLogin);
+            document.getElementById('refresh-doctors-btn').addEventListener('click', loadDoctorsFromFirebase);
+        }
+
+        // Load doctors dynamically from Firebase
+        async function loadDoctorsFromFirebase() {
+            const doctorsList = document.getElementById('doctors-list');
+            const refreshBtn = document.getElementById('refresh-doctors-btn');
+            
+            // Show loading state
+            doctorsList.innerHTML = `
+                <div class="loading-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading doctors from database...</p>
+                </div>
+            `;
+            
+            refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+            refreshBtn.disabled = true;
+
+            try {
+                console.log('🔍 Loading doctors from Firebase...');
+                const doctorsRef = database.ref('MbararaHospital/Doctors');
+                const snapshot = await doctorsRef.once('value');
+                
+                if (!snapshot.exists()) {
+                    doctorsList.innerHTML = `
+                        <div class="loading-state">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <p>No doctors found in database</p>
+                        </div>
+                    `;
+                    allDoctors = [];
+                    return;
+                }
+                
+                allDoctors = [];
+                let doctorsHTML = '';
+                
+                snapshot.forEach((childSnapshot) => {
+                    const doctor = childSnapshot.val();
+                    const doctorId = childSnapshot.key;
+                    
+                    allDoctors.push({
+                        id: doctorId,
+                        ...doctor
+                    });
+                    
+                    doctorsHTML += `
+                        <div class="doctor-account" data-email="${doctor.email}" data-password="${doctor.password}">
+                            <div class="doctor-info">
+                                <div class="email">${doctor.email}</div>
+                                <div class="name">${doctor.name} - ${doctor.specialty || 'General Medicine'}</div>
+                            </div>
+                            <div class="password">${doctor.password}</div>
+                        </div>
+                    `;
+                });
+                
+                doctorsList.innerHTML = doctorsHTML;
+                console.log(`✅ Loaded ${allDoctors.length} doctors from Firebase`);
+                
+                // Add click event to doctor accounts
+                document.querySelectorAll('.doctor-account').forEach(account => {
+                    account.addEventListener('click', function() {
+                        const email = this.getAttribute('data-email');
+                        const password = this.getAttribute('data-password');
+                        document.getElementById('email').value = email;
+                        document.getElementById('password').value = password;
+                        showSuccess('Doctor credentials filled! Click Sign In to continue.');
+                    });
+                });
+                
+            } catch (error) {
+                console.error('❌ Error loading doctors:', error);
+                doctorsList.innerHTML = `
+                    <div class="loading-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Error loading doctors: ${error.message}</p>
+                    </div>
+                `;
+            } finally {
+                refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh List';
+                refreshBtn.disabled = false;
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const loginBtn = document.getElementById('login-btn');
+            const errorMessage = document.getElementById('error-message');
+            
+            // Show loading state
+            const originalText = loginBtn.innerHTML;
+            loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing In...';
+            loginBtn.disabled = true;
+            errorMessage.style.display = 'none';
+            
+            try {
+                console.log('🔐 Attempting login for:', email);
+                
+                // Use the pre-loaded doctors list
+                if (allDoctors.length === 0) {
+                    throw new Error('No doctors available. Please refresh the list.');
+                }
+                
+                let doctorFound = null;
+                
+                // Search through loaded doctors to find matching email
+                for (const doctor of allDoctors) {
+                    if (doctor.email && doctor.email.toLowerCase() === email.toLowerCase()) {
+                        doctorFound = doctor;
+                        break;
+                    }
+                }
+                
+                if (!doctorFound) {
+                    throw new Error('No doctor found with this email address.');
+                }
+                
+                console.log('✅ Doctor found:', doctorFound.name);
+                
+                // Verify password - convert both to string for comparison
+                const storedPassword = doctorFound.password ? doctorFound.password.toString() : '';
+                const enteredPassword = password.toString();
+                
+                if (storedPassword !== enteredPassword) {
+                    throw new Error('Invalid password. Please try again.');
+                }
+                
+                // Login successful - create doctor session
+                currentDoctor = {
+                    id: doctorFound.id,
+                    name: doctorFound.name,
+                    email: doctorFound.email,
+                    specialization: doctorFound.specialty || doctorFound.specialization || 'General Medicine',
+                    hospital: doctorFound.hospital || 'Mbarara Regional Referral Hospital',
+                    location: doctorFound.location || 'General OPD',
+                    phone: doctorFound.phone || 'Not specified',
+                    availability: doctorFound.availability || 'Available'
+                };
+                
+                console.log('✅ Login successful:', currentDoctor);
+                
+                // Save to session storage
+                sessionStorage.setItem('currentDoctor', JSON.stringify(currentDoctor));
+                sessionStorage.setItem('doctorLoginTime', new Date().toISOString());
+                
+                // Show success message before redirect
+                showSuccess(`Welcome back, Dr. ${currentDoctor.name}! Redirecting to dashboard...`);
+                
+                // Redirect to dashboard after short delay
+                setTimeout(() => {
+                    window.location.href = 'doctor-dashboard.html';
+                }, 1500);
+                
+            } catch (error) {
+                console.error('❌ Login error:', error);
+                let errorMsg = 'Login failed. ';
+                
+                if (error.message.includes('email')) {
+                    errorMsg = 'No doctor found with this email address. Please check your email or contact administrator.';
+                } else if (error.message.includes('password')) {
+                    errorMsg = 'Invalid password. Please try again.';
+                } else if (error.message.includes('No doctors')) {
+                    errorMsg = 'System configuration error. Please contact administrator.';
+                } else {
+                    errorMsg = error.message || 'Please check your credentials and try again.';
+                }
+                
+                errorMessage.textContent = errorMsg;
+                errorMessage.style.display = 'block';
+                
+                // Reset button
+                loginBtn.innerHTML = originalText;
+                loginBtn.disabled = false;
+            }
+        }
+
+        function showError(message) {
+            const errorMessage = document.getElementById('error-message');
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            
+            // Hide success message if shown
+            document.getElementById('success-message').style.display = 'none';
+        }
+
+        function showSuccess(message) {
+            const successMessage = document.getElementById('success-message');
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+            
+            // Hide error message if shown
+            document.getElementById('error-message').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
