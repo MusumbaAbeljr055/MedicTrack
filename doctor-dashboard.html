@@ -2419,7 +2419,7 @@
             const savedDoctor = sessionStorage.getItem('currentDoctor');
             if (!savedDoctor) {
                 console.error('❌ No doctor found in session storage');
-                window.location.href = 'doctor-login.html';
+                window.location.href = 'index.html';
                 return null;
             }
             
@@ -2430,7 +2430,7 @@
             } catch (error) {
                 console.error('❌ Authentication error:', error);
                 sessionStorage.removeItem('currentDoctor');
-                window.location.href = 'doctor-login.html';
+                window.location.href = 'index.html';
                 return null;
             }
         }
@@ -2467,7 +2467,7 @@
                 } else {
                     console.error('❌ Doctor no longer exists in database');
                     sessionStorage.removeItem('currentDoctor');
-                    window.location.href = 'doctor-login.html';
+                    window.location.href = 'index.html';
                     return;
                 }
                 
@@ -2476,7 +2476,7 @@
                 showError('Failed to load doctor information. Please login again.');
                 sessionStorage.removeItem('currentDoctor');
                 setTimeout(() => {
-                    window.location.href = 'doctor-login.html';
+                    window.location.href = 'index.html';
                 }, 3000);
             }
         }
@@ -3856,7 +3856,7 @@
                 if (hoursDiff > 8) {
                     sessionStorage.removeItem('currentDoctor');
                     sessionStorage.removeItem('doctorLoginTime');
-                    window.location.href = 'doctor-login.html';
+                    window.location.href = 'index.html';
                     return;
                 }
             }
@@ -3882,7 +3882,7 @@
                 
                 // Redirect to login page after short delay
                 setTimeout(() => {
-                    window.location.href = 'doctor-login.html';
+                    window.location.href = 'index.html';
                 }, 1500);
             }
         }
